@@ -415,7 +415,7 @@ import { Grid, List as ListIcon, Moon, Sun, Plus, LogOut, NotebookPenIcon } from
 import { getOfflineNotes, clearOfflineNotes } from "../utils/OfflineNotes";
 
 const Dashboard = () => {
-  const navigate = useNavigate();                           // NEW
+  const navigate = useNavigate();                           
 
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState("");
