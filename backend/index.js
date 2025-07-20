@@ -6,7 +6,7 @@ const path = require("path")
 dotenv.config();
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: "https://smartnotes-r3ac.onrender.com/", credentials: true }));
 app.use(express.json());
 
 const _dirname = path.resolve();
