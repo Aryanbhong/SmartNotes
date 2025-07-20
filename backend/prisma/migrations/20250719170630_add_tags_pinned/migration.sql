@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Note" ADD COLUMN     "pinned" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "tags" TEXT[] DEFAULT ARRAY[]::TEXT[];

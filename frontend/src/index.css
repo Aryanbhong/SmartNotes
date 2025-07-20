@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+.ProseMirror {
+  outline: none;
+}
+.ProseMirror p {
+  margin: 0.5em 0;
+}
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 1.5em;
+}
+/* Force note preview content to inherit modal text color */
+.note-content *,
+.note-content *:where([style*="color"]) {
+  color: inherit !important;
+}
+
+/* Optional: scale down giant headings from pasted HTML editors */
+.note-content h1 { font-size: 1.5em !important; }
+.note-content h2 { font-size: 1.25em !important; }
+.note-content h3 { font-size: 1.125em !important; }
