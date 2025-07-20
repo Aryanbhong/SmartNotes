@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "prisma generate && npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "node backend/index.js",
     "start": "node backend/index.js"
   },
   "keywords": [],
