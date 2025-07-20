@@ -406,7 +406,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";            // NEW
 import API from "../services/API";
-import AddEditNoteModal from "../components/AddEditNoteModal";
+import AddEditNoteModal from "../Components/AddEditNoteModal";
 import NoteCard from "../Components/NoteCard";
 import OCRUpload from "../Components/OCRUpload";
 import ViewNoteModal from "../Components/viewNoteModal"; 
