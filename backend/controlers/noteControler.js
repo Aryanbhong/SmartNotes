@@ -1,200 +1,3 @@
-// const prisma = require("../config/Db");
-
-// // // Create Note
-// // exports.createNote = async (req, res) => {
-// //   try {
-// //     const { title, content, userId, tags } = req.body;
-// //     if (!title || !content || !userId) {
-// //       return res.status(400).json({ message: "All fields are required" });
-// //     }
-
-// //     const note = await prisma.note.create({
-// //       data: { title, content, userId, tags: tags || [] },
-// //     });
-
-// //     return res.status(201).json({ success: true, note });
-// //   } catch (error) {
-// //     console.error("Create Note Error:", error);
-// //     return res.status(500).json({ message: "Failed to create note", error: error.message });
-// //   }
-// // };
-
-// // // Get Notes with search
-// // exports.getNotes = async (req, res) => {
-// //   try {
-// //     const { userId, search } = req.query;
-// //     const notes = await prisma.note.findMany({
-// //       where: {
-// //         userId: parseInt(userId),
-// //         OR: [
-// //           { title: { contains: search || "", mode: "insensitive" } },
-// //           { content: { contains: search || "", mode: "insensitive" } },
-// //         ],
-// //       },
-// //       orderBy: { createdAt: "desc" },
-// //     });
-
-// //     return res.status(200).json({ success: true, notes });
-// //   } catch (error) {
-// //     return res.status(500).json({ message: "Failed to fetch notes", error: error.message });
-// //   }
-// // };
-
-
-// // exports.updateNote = async (req, res) => {
-// //   try {
-// //     const { id } = req.params;
-// //     const { title, content } = req.body;
-// //     const note = await prisma.note.update({
-// //       where: { id: parseInt(id) },
-// //       data: { title, content },
-// //     });
-// //     res.json({ success: true, note });
-// //   } catch (error) {
-// //     res.status(500).json({ error: error.message });
-// //   }
-// // };
-
-// // exports.deleteNote = async (req, res) => {
-// //   try {
-// //     const { id } = req.params;
-// //     await prisma.note.delete({ where: { id: parseInt(id) } });
-// //     res.json({ success: true, message: "Note deleted" });
-// //   } catch (error) {
-// //     res.status(500).json({ error: error.message });
-// //   }
-// // };
-
-
-
-// // Create a new note with tags
-// exports.createNote = async (req, res) => {
-//   try {
-//     const { title, content, userId, tags } = req.body;
-
-//     if (!title || !content || !userId) {
-//       return res.status(400).json({ message: "Title, content, and userId are required" });
-//     }
-
-//     const note = await prisma.note.create({
-//       data: {
-//         title,
-//         content,
-//         userId: parseInt(userId),
-//         tags: tags || [], // Default to empty array if no tags
-//       },
-//     });
-
-//     return res.status(201).json({ success: true, note });
-//   } catch (error) {
-//     console.error("Create Note Error:", error);
-//     return res.status(500).json({ message: "Failed to create note", error: error.message });
-//   }
-// };
-
-// // Get all notes for a user (with optional search)
-// exports.getNotes = async (req, res) => {
-//   try {
-//     const { userId, search, tag } = req.query;
-
-//     const filters = {
-//       userId: parseInt(userId),
-//     };
-
-//     if (search) {
-//       filters.OR = [
-//         { title: { contains: search, mode: "insensitive" } },
-//         { content: { contains: search, mode: "insensitive" } },
-//       ];
-//     }
-
-//     if (tag) {
-//       filters.tags = { has: tag }; // Filter notes containing this tag
-//     }
-
-//     const notes = await prisma.note.findMany({
-//       where: filters,
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     return res.status(200).json({ success: true, notes });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Failed to fetch notes", error: error.message });
-//   }
-// };
-
-// // Update note (including tags)
-// exports.updateNote = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { title, content, tags } = req.body;
-
-//     const updatedNote = await prisma.note.update({
-//       where: { id: parseInt(id) },
-//       data: { title, content, tags: tags || [] },
-//     });
-
-//     return res.status(200).json({ success: true, note: updatedNote });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Failed to update note", error: error.message });
-//   }
-// };
-
-// // Delete note
-// exports.deleteNote = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     await prisma.note.delete({ where: { id: parseInt(id) } });
-
-//     return res.status(200).json({ success: true, message: "Note deleted" });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Failed to delete note", error: error.message });
-//   }
-// };
-
-// exports.togglePin = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     const existing = await prisma.note.findUnique({
-//       where: { id: parseInt(id, 10) },
-//     });
-//     if (!existing) {
-//       return res.status(404).json({ message: "Note not found" });
-//     }
-
-//     const updated = await prisma.note.update({
-//       where: { id: existing.id },
-//       data: { pinned: !existing.pinned },
-//     });
-
-//     return res.status(200).json({ success: true, note: updated });
-//   } catch (error) {
-//     console.error("togglePin error:", error);
-//     return res
-//       .status(500)
-//       .json({ message: "Failed to toggle pin", error: error.message });
-//   }
-// };
-
-// exports.toggleFavorite = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const existing = await prisma.note.findUnique({ where: { id: parseInt(id) } });
-//     if (!existing) return res.status(404).json({ message: "Note not found" });
-
-//     const updated = await prisma.note.update({
-//       where: { id: parseInt(id) },
-//       data: { favorite: !existing.favorite },
-//     });
-
-//     return res.status(200).json({ success: true, note: updated });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Failed to toggle favorite", error: error.message });
-//   }
-// };
-
-
 
 import prisma from "../config/Db.js";
 import { OpenAI } from "openai";
@@ -209,7 +12,7 @@ export const generateSummary = async (req, res) => {
     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
     if (!note) return res.status(404).json({ message: "Note not found" });
 
-    // Use OpenAI to summarize the note content
+  
     const prompt = `Summarize the following note in 2-3 concise sentences:\n\n${note.content}`;
 
     const aiResponse = await openai.chat.completions.create({
@@ -220,7 +23,7 @@ export const generateSummary = async (req, res) => {
 
     const summary = aiResponse.choices[0].message.content.trim();
 
-    // Update note with summary
+    
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
       data: { summary },
@@ -238,15 +41,15 @@ export const suggestTags = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the note
+ 
     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
     if (!note) return res.status(404).json({ message: "Note not found" });
 
-    // AI Prompt
+   
     const prompt = `Analyze the following note and suggest 3-5 single-word tags (like keywords) that describe its content:
     \n\n${note.content}`;
 
-    // OpenAI API Call
+   
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
@@ -313,46 +116,6 @@ const normalizeTags = (tags) => {
 };
 
 
-// export const createNote = async (req, res) => {
-//   try {
-//     const { title, content, userId, tags, pinned, favorite } = req.body;
-
-//     if (!title || !content || !userId) {
-//       return res
-//         .status(400)
-//         .json({ message: "Title, content, and userId are required" });
-//     }
-
-//     // Normalize tags
-//     let tagArray = [];
-//     if (Array.isArray(tags)) tagArray = tags;
-//     else if (typeof tags === "string") {
-//       tagArray = tags
-//         .split(",")
-//         .map((t) => t.trim())
-//         .filter(Boolean);
-//     }
-
-//     const note = await prisma.note.create({
-//       data: {
-//         title,
-//         content,
-//         userId: parseInt(userId, 10),
-//         tags: tagArray,
-//         pinned: Boolean(pinned),
-//         favorite: Boolean(favorite),
-//       },
-//     });
-
-//     return res.status(201).json({ success: true, note });
-//   } catch (error) {
-//     console.error("Create Note Error:", error);
-//     return res
-//       .status(500)
-//       .json({ message: "Failed to create note", error: error.message });
-//   }
-// };
-
 export const createNote = async (req, res) => {
   try {
     const { title, content, tags, pinned, favorite } = req.body;
@@ -394,38 +157,6 @@ export const createNote = async (req, res) => {
   }
 };
 
-
-
-
-//   export const getNotes = async (req, res) => {
-//   try {
-//     const { userId, search, tag } = req.query;
-
-//     const filters = {
-//       userId: parseInt(userId),
-//     };
-
-//     if (search) {
-//       filters.OR = [
-//         { title: { contains: search, mode: "insensitive" } },
-//         { content: { contains: search, mode: "insensitive" } },
-//       ];
-//     }
-
-//     if (tag) {
-//       filters.tags = { has: tag }; // Filter notes containing this tag
-//     }
-
-//     const notes = await prisma.note.findMany({
-//       where: filters,
-//       orderBy: { createdAt: "desc" },
-//     });
-
-//     return res.status(200).json({ success: true, notes });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Failed to fetch notes", error: error.message });
-//   }
-// };
 
 export const getNotes = async (req, res) => {
   try {
@@ -500,7 +231,7 @@ export const updateNote = async (req, res) => {
     const normTags = normalizeTags(tags);
     if (normTags) data.tags = normTags;
 
-    // Accept booleans (or truthy values that cast)
+  
     if (typeof pinned === "boolean") data.pinned = pinned;
     if (typeof favorite === "boolean") data.favorite = favorite;
 

@@ -98,7 +98,7 @@ const RichTextEditor = ({ content, setContent, darkMode }) => {
         </button>
       </div>
 
-      {/* Editor Area */}
+    
       <EditorContent
         editor={editor}
         className={`min-h-[150px] p-3 prose max-w-none outline-none ${

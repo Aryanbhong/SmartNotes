@@ -1,13 +1,14 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // Update if deployed
+  baseURL: "http://localhost:5000/api", // backend base URL
 });
 
-API.interceptors.request.use((config) => {
+// For attaching token to requests
+API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+  if (token) req.headers.Authorization = `Bearer ${token}`;
+  return req;
 });
 
 export default API;

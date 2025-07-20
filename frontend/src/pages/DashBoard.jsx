@@ -509,7 +509,6 @@ const confirmDelete = () => {
   useEffect(() => {
     fetchNotes();
   localStorage.setItem("darkMode", darkMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, selectedTag, sortOrder, darkMode]);
 
   const handleDelete = async (id) => {
@@ -586,15 +585,7 @@ const confirmDelete = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-         
-          {/* <h1
-  className="text-4xl sm:text-5xl font-black select-none 
-             text-gray-900 dark:text-gray-100 
-             drop-shadow-lg tracking-tight"
->
-  <span className="border-b-4 border-blue-500 pb-1">SmartNotes</span>
-</h1> */}
-{/* SmartNotes Title */}
+        
 <h1
   className={`
     text-4xl sm:text-5xl font-extrabold select-none tracking-tight
@@ -609,14 +600,7 @@ const confirmDelete = () => {
     SmartNotes
   </span>
 </h1>
-
-
-
-
-
-
-
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+ <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
            
             <span
               className={`px-2 py-1 rounded text-xs ${
