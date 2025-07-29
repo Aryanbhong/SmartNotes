@@ -99,7 +99,12 @@ import { OpenAI } from "openai";
 import cohere from "cohere-ai";
 import { v4 as uuidv4 } from "uuid";
 
-cohere.init(process.env.COHERE_API_KEY);
+import { CohereClient } from "cohere-ai";
+
+const cohere = new CohereClient({
+  token: process.env.COHERE_API_KEY,
+});
+
 
 export const generateSummary = async (req, res) => {
   try {
