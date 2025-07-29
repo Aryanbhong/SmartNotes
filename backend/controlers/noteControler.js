@@ -2,8 +2,104 @@
 import prisma from "../config/Db.js";
 import { OpenAI } from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// import { v4 as uuidv4 } from "uuid";
+
+// export const generateSummary = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
+//     if (!note) return res.status(404).json({ message: "Note not found" });
+
+  
+//     const prompt = `Summarize the following note in 2-3 concise sentences:\n\n${note.content}`;
+
+//     const aiResponse = await openai.chat.completions.create({
+//       model: "gpt-3.5-turbo",
+//       messages: [{ role: "user", content: prompt }],
+//       max_tokens: 150,
+//     });
+
+//     const summary = aiResponse.choices[0].message.content.trim();
+
+    
+//     const updatedNote = await prisma.note.update({
+//       where: { id: note.id },
+//       data: { summary },
+//     });
+
+//     return res.status(200).json({ success: true, summary, note: updatedNote });
+//   } catch (error) {
+//     console.error("AI Summary Error:", error);
+//     return res.status(500).json({ message: "Failed to generate summary", error: error.message });
+//   }
+// };
+
+
+// export const suggestTags = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+ 
+//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
+//     if (!note) return res.status(404).json({ message: "Note not found" });
+
+   
+//     const prompt = `Analyze the following note and suggest 3-5 single-word tags (like keywords) that describe its content:
+//     \n\n${note.content}`;
+
+   
+//     const aiResponse = await openai.chat.completions.create({
+//       model: "gpt-3.5-turbo",
+//       messages: [{ role: "user", content: prompt }],
+//       max_tokens: 100,
+//     });
+
+//     const rawTags = aiResponse.choices[0].message.content.trim();
+//     const tags = rawTags.split(/,|\n/).map(tag => tag.trim()).filter(Boolean);
+
+//     return res.status(200).json({ success: true, tags });
+//   } catch (error) {
+//     console.error("AI Tag Suggestion Error:", error);
+//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//   }
+// };
+
+// export const suggestTagsFromContent = async (req, res) => {
+//   try {
+//     const { content } = req.body;
+//     if (!content || !content.trim()) {
+//       return res.status(400).json({ message: "Content is required." });
+//     }
+
+//     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, no #, comma separated.\n\n${content}`;
+
+//     const aiResponse = await openai.chat.completions.create({
+//       model: "gpt-3.5-turbo",
+//       messages: [{ role: "user", content: prompt }],
+//       max_tokens: 60,
+//     });
+
+//     const raw = aiResponse.choices?.[0]?.message?.content?.trim() || "";
+//     const tags = raw
+//       .split(/,|\n/)
+//       .map((t) => t.trim().toLowerCase())
+//       .filter(Boolean);
+
+//     return res.status(200).json({ success: true, tags });
+//   } catch (error) {
+//     console.error("AI Tag Suggestion (content) Error:", error);
+//     return res
+//       .status(500)
+//       .json({ message: "Failed to suggest tags", error: error.message });
+//   }
+// };
+
+import cohere from "cohere-ai";
 import { v4 as uuidv4 } from "uuid";
+
+cohere.init(process.env.COHERE_API_KEY);
 
 export const generateSummary = async (req, res) => {
   try {
@@ -12,18 +108,15 @@ export const generateSummary = async (req, res) => {
     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
     if (!note) return res.status(404).json({ message: "Note not found" });
 
-  
-    const prompt = `Summarize the following note in 2-3 concise sentences:\n\n${note.content}`;
-
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 150,
+    const cohereResponse = await cohere.summarize({
+      text: note.content,
+      length: "auto",
+      format: "paragraph",
+      extractiveness: "auto",
     });
 
-    const summary = aiResponse.choices[0].message.content.trim();
+    const summary = cohereResponse.body.summary;
 
-    
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
       data: { summary },
@@ -31,37 +124,33 @@ export const generateSummary = async (req, res) => {
 
     return res.status(200).json({ success: true, summary, note: updatedNote });
   } catch (error) {
-    console.error("AI Summary Error:", error);
+    console.error("Cohere Summary Error:", error);
     return res.status(500).json({ message: "Failed to generate summary", error: error.message });
   }
 };
-
 
 export const suggestTags = async (req, res) => {
   try {
     const { id } = req.params;
 
- 
     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
     if (!note) return res.status(404).json({ message: "Note not found" });
 
-   
-    const prompt = `Analyze the following note and suggest 3-5 single-word tags (like keywords) that describe its content:
-    \n\n${note.content}`;
+    const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${note.content}`;
 
-   
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 100,
+    const cohereResponse = await cohere.generate({
+      model: "command-r",
+      prompt,
+      max_tokens: 60,
+      temperature: 0.6,
     });
 
-    const rawTags = aiResponse.choices[0].message.content.trim();
-    const tags = rawTags.split(/,|\n/).map(tag => tag.trim()).filter(Boolean);
+    const raw = cohereResponse.body.generations[0].text.trim();
+    const tags = raw.split(/,|\n/).map(tag => tag.trim().toLowerCase()).filter(Boolean);
 
     return res.status(200).json({ success: true, tags });
   } catch (error) {
-    console.error("AI Tag Suggestion Error:", error);
+    console.error("Cohere Tag Suggestion Error:", error);
     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
   }
 };
@@ -73,29 +162,27 @@ export const suggestTagsFromContent = async (req, res) => {
       return res.status(400).json({ message: "Content is required." });
     }
 
-    const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, no #, comma separated.\n\n${content}`;
+    const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
 
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
+    const cohereResponse = await cohere.generate({
+      model: "command-r",
+      prompt,
       max_tokens: 60,
+      temperature: 0.6,
     });
 
-    const raw = aiResponse.choices?.[0]?.message?.content?.trim() || "";
+    const raw = cohereResponse.body.generations[0].text.trim();
     const tags = raw
       .split(/,|\n/)
-      .map((t) => t.trim().toLowerCase())
+      .map(t => t.trim().toLowerCase())
       .filter(Boolean);
 
     return res.status(200).json({ success: true, tags });
   } catch (error) {
-    console.error("AI Tag Suggestion (content) Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to suggest tags", error: error.message });
+    console.error("Cohere Tag Suggestion (content) Error:", error);
+    return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
   }
 };
-
 
 
 const toInt = (v) => {
