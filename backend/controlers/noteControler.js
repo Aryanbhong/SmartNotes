@@ -194,6 +194,35 @@ export const suggestTags = async (req, res) => {
 };
 
 
+// export const suggestTagsFromContent = async (req, res) => {
+//   try {
+//     const { content } = req.body;
+//     if (!content || !content.trim()) {
+//       return res.status(400).json({ message: "Content is required." });
+//     }
+
+//     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
+
+//     const cohereResponse = await cohere.generate({
+//       model: "command-xlarge",
+//       prompt,
+//       max_tokens: 60,
+//       temperature: 0.6,
+//     });
+
+//     const raw = cohereResponse.body.generations[0].text.trim();
+//     const tags = raw
+//       .split(/,|\n/)
+//       .map(t => t.trim().toLowerCase())
+//       .filter(Boolean);
+
+//     return res.status(200).json({ success: true, tags });
+//   } catch (error) {
+//     console.error("Cohere Tag Suggestion (content) Error:", error);
+//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//   }
+// };
+
 export const suggestTagsFromContent = async (req, res) => {
   try {
     const { content } = req.body;
@@ -203,14 +232,18 @@ export const suggestTagsFromContent = async (req, res) => {
 
     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
 
-    const cohereResponse = await cohere.generate({
-      model: "command-xlarge",
+    const response = await cohere.generate({
+      model: "command", // use 'command' or 'command-r+', not 'command-xlarge'
       prompt,
       max_tokens: 60,
       temperature: 0.6,
     });
 
-    const raw = cohereResponse.body.generations[0].text.trim();
+    const raw = response.generations?.[0]?.text?.trim();
+    if (!raw) {
+      throw new Error("No generations returned from Cohere.");
+    }
+
     const tags = raw
       .split(/,|\n/)
       .map(t => t.trim().toLowerCase())
