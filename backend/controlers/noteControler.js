@@ -96,7 +96,7 @@ import { OpenAI } from "openai";
 //   }
 // };
 
-import cohere from "cohere-ai";
+
 import { v4 as uuidv4 } from "uuid";
 
 import { CohereClient } from "cohere-ai";
