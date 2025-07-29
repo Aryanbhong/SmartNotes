@@ -144,7 +144,7 @@ export const suggestTags = async (req, res) => {
     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${note.content}`;
 
     const cohereResponse = await cohere.generate({
-      model: "command-r",
+      model: "command-xlarge",
       prompt,
       max_tokens: 60,
       temperature: 0.6,
@@ -170,7 +170,7 @@ export const suggestTagsFromContent = async (req, res) => {
     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
 
     const cohereResponse = await cohere.generate({
-      model: "command-r",
+      model: "command-xlarge",
       prompt,
       max_tokens: 60,
       temperature: 0.6,
