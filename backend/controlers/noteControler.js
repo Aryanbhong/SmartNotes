@@ -230,24 +230,28 @@ export const suggestTagsFromContent = async (req, res) => {
       return res.status(400).json({ message: "Content is required." });
     }
 
-    const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
+    const prompt = `Extract 3-5 lowercase, single-word or hyphenated tags that describe the following note. Output ONLY a comma-separated list of tags, each starting with '#', and no extra text:\n\n${content}`;
 
     const response = await cohere.generate({
-      model: "command", // use 'command' or 'command-r+', not 'command-xlarge'
+      model: "command",
       prompt,
       max_tokens: 60,
       temperature: 0.6,
     });
 
     const raw = response.generations?.[0]?.text?.trim();
-    if (!raw) {
-      throw new Error("No generations returned from Cohere.");
-    }
+    if (!raw) throw new Error("No generations returned.");
 
-    const tags = raw
+    const cleaned = raw
+      .replace(/^.*?(?=#|\d+\.\s|[a-z\-]+,)/i, "")
+      .replace(/\d+\.\s*/g, "")
+      .trim();
+
+    const tags = cleaned
       .split(/,|\n/)
       .map(t => t.trim().toLowerCase())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
 
     return res.status(200).json({ success: true, tags });
   } catch (error) {
@@ -255,6 +259,7 @@ export const suggestTagsFromContent = async (req, res) => {
     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
   }
 };
+
 
 
 const toInt = (v) => {
