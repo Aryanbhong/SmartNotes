@@ -16,7 +16,7 @@ export const generateSummary = async (req, res) => {
     const prompt = `Summarize the following note in 2-3 concise sentences:\n\n${note.content}`;
 
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 150,
     });
@@ -51,7 +51,7 @@ export const suggestTags = async (req, res) => {
 
    
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 100,
     });
@@ -76,7 +76,7 @@ export const suggestTagsFromContent = async (req, res) => {
     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, no #, comma separated.\n\n${content}`;
 
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 60,
     });
