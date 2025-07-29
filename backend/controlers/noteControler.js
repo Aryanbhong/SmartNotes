@@ -113,14 +113,17 @@ export const generateSummary = async (req, res) => {
     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
     if (!note) return res.status(404).json({ message: "Note not found" });
 
-    const cohereResponse = await cohere.summarize({
+    const response = await cohere.summarize({
       text: note.content,
       length: "auto",
       format: "paragraph",
       extractiveness: "auto",
     });
 
-    const summary = cohereResponse.body.summary;
+    const summary = response?.summary;
+    if (!summary) {
+      throw new Error("No summary returned from Cohere.");
+    }
 
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
@@ -134,6 +137,32 @@ export const generateSummary = async (req, res) => {
   }
 };
 
+
+// export const suggestTags = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
+//     if (!note) return res.status(404).json({ message: "Note not found" });
+
+//     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${note.content}`;
+
+//     const cohereResponse = await cohere.generate({
+//       model: "command-xlarge",
+//       prompt,
+//       max_tokens: 60,
+//       temperature: 0.6,
+//     });
+
+//     const raw = cohereResponse.body.generations[0].text.trim();
+//     const tags = raw.split(/,|\n/).map(tag => tag.trim().toLowerCase()).filter(Boolean);
+
+//     return res.status(200).json({ success: true, tags });
+//   } catch (error) {
+//     console.error("Cohere Tag Suggestion Error:", error);
+//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//   }
+// };
 export const suggestTags = async (req, res) => {
   try {
     const { id } = req.params;
@@ -144,14 +173,18 @@ export const suggestTags = async (req, res) => {
     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${note.content}`;
 
     const cohereResponse = await cohere.generate({
-      model: "command-xlarge",
+      model: "command",
       prompt,
       max_tokens: 60,
       temperature: 0.6,
     });
 
-    const raw = cohereResponse.body.generations[0].text.trim();
-    const tags = raw.split(/,|\n/).map(tag => tag.trim().toLowerCase()).filter(Boolean);
+    const raw = cohereResponse?.generations?.[0]?.text?.trim();
+    if (!raw) throw new Error("No tags generated from Cohere");
+
+    const tags = raw.split(/,|\n/)
+      .map(tag => tag.trim().toLowerCase())
+      .filter(Boolean);
 
     return res.status(200).json({ success: true, tags });
   } catch (error) {
@@ -159,6 +192,7 @@ export const suggestTags = async (req, res) => {
     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
   }
 };
+
 
 export const suggestTagsFromContent = async (req, res) => {
   try {
