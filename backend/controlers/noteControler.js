@@ -2,99 +2,6 @@
 import prisma from "../config/Db.js";
 import { OpenAI } from "openai";
 
-// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-// import { v4 as uuidv4 } from "uuid";
-
-// export const generateSummary = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
-//     if (!note) return res.status(404).json({ message: "Note not found" });
-
-  
-//     const prompt = `Summarize the following note in 2-3 concise sentences:\n\n${note.content}`;
-
-//     const aiResponse = await openai.chat.completions.create({
-//       model: "gpt-3.5-turbo",
-//       messages: [{ role: "user", content: prompt }],
-//       max_tokens: 150,
-//     });
-
-//     const summary = aiResponse.choices[0].message.content.trim();
-
-    
-//     const updatedNote = await prisma.note.update({
-//       where: { id: note.id },
-//       data: { summary },
-//     });
-
-//     return res.status(200).json({ success: true, summary, note: updatedNote });
-//   } catch (error) {
-//     console.error("AI Summary Error:", error);
-//     return res.status(500).json({ message: "Failed to generate summary", error: error.message });
-//   }
-// };
-
-
-// export const suggestTags = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
- 
-//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
-//     if (!note) return res.status(404).json({ message: "Note not found" });
-
-   
-//     const prompt = `Analyze the following note and suggest 3-5 single-word tags (like keywords) that describe its content:
-//     \n\n${note.content}`;
-
-   
-//     const aiResponse = await openai.chat.completions.create({
-//       model: "gpt-3.5-turbo",
-//       messages: [{ role: "user", content: prompt }],
-//       max_tokens: 100,
-//     });
-
-//     const rawTags = aiResponse.choices[0].message.content.trim();
-//     const tags = rawTags.split(/,|\n/).map(tag => tag.trim()).filter(Boolean);
-
-//     return res.status(200).json({ success: true, tags });
-//   } catch (error) {
-//     console.error("AI Tag Suggestion Error:", error);
-//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
-//   }
-// };
-
-// export const suggestTagsFromContent = async (req, res) => {
-//   try {
-//     const { content } = req.body;
-//     if (!content || !content.trim()) {
-//       return res.status(400).json({ message: "Content is required." });
-//     }
-
-//     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, no #, comma separated.\n\n${content}`;
-
-//     const aiResponse = await openai.chat.completions.create({
-//       model: "gpt-3.5-turbo",
-//       messages: [{ role: "user", content: prompt }],
-//       max_tokens: 60,
-//     });
-
-//     const raw = aiResponse.choices?.[0]?.message?.content?.trim() || "";
-//     const tags = raw
-//       .split(/,|\n/)
-//       .map((t) => t.trim().toLowerCase())
-//       .filter(Boolean);
-
-//     return res.status(200).json({ success: true, tags });
-//   } catch (error) {
-//     console.error("AI Tag Suggestion (content) Error:", error);
-//     return res
-//       .status(500)
-//       .json({ message: "Failed to suggest tags", error: error.message });
-//   }
-// };
 
 
 import { v4 as uuidv4 } from "uuid";
@@ -106,37 +13,90 @@ const cohere = new CohereClient({
 });
 
 
+// export const generateSummary = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
+//     if (!note) return res.status(404).json({ message: "Note not found" });
+
+//     const response = await cohere.summarize({
+//       text: note.content,
+//       length: "auto",
+//       format: "paragraph",
+//       extractiveness: "auto",
+//     });
+
+//     const summary = response?.summary;
+//     if (!summary) {
+//       throw new Error("No summary returned from Cohere.");
+//     }
+
+//     const updatedNote = await prisma.note.update({
+//       where: { id: note.id },
+//       data: { summary },
+//     });
+
+//     return res.status(200).json({ success: true, summary, note: updatedNote });
+//   } catch (error) {
+//     console.error("Cohere Summary Error:", error);
+//     return res.status(500).json({ message: "Failed to generate summary", error: error.message });
+//   }
+// };
+
+
+
 export const generateSummary = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
-    if (!note) return res.status(404).json({ message: "Note not found" });
-
-    const response = await cohere.summarize({
-      text: note.content,
-      length: "auto",
-      format: "paragraph",
-      extractiveness: "auto",
+    const note = await prisma.note.findUnique({
+      where: { id: parseInt(id) },
     });
 
-    const summary = response?.summary;
-    if (!summary) {
-      throw new Error("No summary returned from Cohere.");
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
     }
+
+    const prompt = `
+      Summarize the following note into a short paragraph.
+      - Do NOT add new information.
+      - Keep meaning intact.
+      - Friendly and simple tone.
+
+      Note content:
+      ${note.content}
+    `;
+
+    const response = await cohere.chat({
+      model: "command-a-03-2025",      // FREE MODEL
+      message: prompt               // MUST be a STRING, nothing else.
+    });
+
+    // NEW SDK RESPONSE FORMAT
+    const summary = response?.text?.trim();
+
+    if (!summary) throw new Error("Cohere returned no summary");
 
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
       data: { summary },
     });
 
-    return res.status(200).json({ success: true, summary, note: updatedNote });
+    return res.status(200).json({
+      success: true,
+      summary,
+      note: updatedNote,
+    });
+
   } catch (error) {
     console.error("Cohere Summary Error:", error);
-    return res.status(500).json({ message: "Failed to generate summary", error: error.message });
+    return res.status(500).json({
+      message: "Failed to generate summary",
+      error: error.message,
+    });
   }
 };
-
 
 // export const suggestTags = async (req, res) => {
 //   try {
@@ -163,33 +123,50 @@ export const generateSummary = async (req, res) => {
 //     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
 //   }
 // };
+
+
 export const suggestTags = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const note = await prisma.note.findUnique({ where: { id: parseInt(id) } });
-    if (!note) return res.status(404).json({ message: "Note not found" });
-
-    const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${note.content}`;
-
-    const cohereResponse = await cohere.generate({
-      model: "command",
-      prompt,
-      max_tokens: 60,
-      temperature: 0.6,
+    const note = await prisma.note.findUnique({
+      where: { id: parseInt(id) },
     });
 
-    const raw = cohereResponse?.generations?.[0]?.text?.trim();
-    if (!raw) throw new Error("No tags generated from Cohere");
+    if (!note) return res.status(404).json({ message: "Note not found" });
 
-    const tags = raw.split(/,|\n/)
-      .map(tag => tag.trim().toLowerCase())
+    const userPrompt = `
+      Extract 3–5 short lowercase tags from the note.
+      Rules:
+      - One word or hyphenated
+      - No sentences
+      - Return comma-separated
+
+      Note:
+      ${note.content}
+    `;
+
+    const response = await cohere.chat({
+      model: "command-a-03-2025",
+      message: userPrompt,
+    });
+
+    const raw = response?.text?.trim();
+    if (!raw) throw new Error("Cohere returned no tags");
+
+    const tags = raw
+      .split(/,|\n/)
+      .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
     return res.status(200).json({ success: true, tags });
+
   } catch (error) {
     console.error("Cohere Tag Suggestion Error:", error);
-    return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+    return res.status(500).json({
+      message: "Failed to suggest tags",
+      error: error.message,
+    });
   }
 };
 
@@ -223,43 +200,89 @@ export const suggestTags = async (req, res) => {
 //   }
 // };
 
+// export const suggestTagsFromContent = async (req, res) => {
+//   try {
+//     const { content } = req.body;
+//     if (!content || !content.trim()) {
+//       return res.status(400).json({ message: "Content is required." });
+//     }
+
+//     const prompt = `Extract 3-5 lowercase, single-word or hyphenated tags that describe the following note. Output ONLY a comma-separated list of tags, each starting with '#', and no extra text:\n\n${content}`;
+
+//     const response = await cohere.generate({
+//       model: "command",
+//       prompt,
+//       max_tokens: 60,
+//       temperature: 0.6,
+//     });
+
+//     const raw = response.generations?.[0]?.text?.trim();
+//     if (!raw) throw new Error("No generations returned.");
+
+//     const cleaned = raw
+//       .replace(/^.*?(?=#|\d+\.\s|[a-z\-]+,)/i, "")
+//       .replace(/\d+\.\s*/g, "")
+//       .trim();
+
+//     const tags = cleaned
+//       .split(/,|\n/)
+//       .map(t => t.trim().toLowerCase())
+//       .filter(Boolean)
+//       .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
+
+//     return res.status(200).json({ success: true, tags });
+//   } catch (error) {
+//     console.error("Cohere Tag Suggestion (content) Error:", error);
+//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//   }
+// };
+
+
 export const suggestTagsFromContent = async (req, res) => {
   try {
     const { content } = req.body;
+
     if (!content || !content.trim()) {
-      return res.status(400).json({ message: "Content is required." });
+      return res.status(400).json({ message: "Content is required" });
     }
 
-    const prompt = `Extract 3-5 lowercase, single-word or hyphenated tags that describe the following note. Output ONLY a comma-separated list of tags, each starting with '#', and no extra text:\n\n${content}`;
+    const userPrompt = `
+      Extract 3–5 tags from the following note.
+      Rules:
+      - Only lowercase
+      - Single word or hyphenated
+      - No sentences
+      - Return comma-separated only
 
-    const response = await cohere.generate({
-      model: "command",
-      prompt,
-      max_tokens: 60,
-      temperature: 0.6,
+      Note content:
+      ${content}
+    `;
+
+    // FIX: cohere.chat() requires "message", not "messages"
+    const response = await cohere.chat({
+      model: "command-a-03-2025",
+      message: userPrompt,
     });
 
-    const raw = response.generations?.[0]?.text?.trim();
-    if (!raw) throw new Error("No generations returned.");
+    const raw = response?.text?.trim();
+    if (!raw) throw new Error("Cohere returned no tags");
 
-    const cleaned = raw
-      .replace(/^.*?(?=#|\d+\.\s|[a-z\-]+,)/i, "")
-      .replace(/\d+\.\s*/g, "")
-      .trim();
-
-    const tags = cleaned
+    const tags = raw
       .split(/,|\n/)
-      .map(t => t.trim().toLowerCase())
-      .filter(Boolean)
-      .map(tag => tag.startsWith('#') ? tag : `#${tag}`);
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
 
     return res.status(200).json({ success: true, tags });
+
   } catch (error) {
     console.error("Cohere Tag Suggestion (content) Error:", error);
-    return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+    return res.status(500).json({
+      message: "Failed to suggest tags",
+      error: error.message,
+    });
   }
 };
-
+ 
 
 
 const toInt = (v) => {
