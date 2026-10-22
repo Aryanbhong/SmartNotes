@@ -1,12 +1,9 @@
 
+
 import prisma from "../config/Db.js";
-import { OpenAI } from "openai";
-
-
-
 import { v4 as uuidv4 } from "uuid";
-
 import { CohereClient } from "cohere-ai";
+
 
 const cohere = new CohereClient({
   token: process.env.COHERE_API_KEY,
@@ -120,7 +117,10 @@ export const generateSummary = async (req, res) => {
 //     return res.status(200).json({ success: true, tags });
 //   } catch (error) {
 //     console.error("Cohere Tag Suggestion Error:", error);
-//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//     return res.status(500).json({
+//       message: "Failed to suggest tags",
+//       error: error.message,
+//     });
 //   }
 // };
 
@@ -170,33 +170,40 @@ export const suggestTags = async (req, res) => {
   }
 };
 
+/* --------------------- TAG SUGGEST FROM CONTENT --------------------- */
 
 // export const suggestTagsFromContent = async (req, res) => {
 //   try {
 //     const { content } = req.body;
+
 //     if (!content || !content.trim()) {
-//       return res.status(400).json({ message: "Content is required." });
+//       return res.status(400).json({ message: "Content is required" });
 //     }
 
-//     const prompt = `Extract 3-5 short, single-word or hyphenated tags that describe the following note. Lowercase, comma-separated.\n\n${content}`;
+//     const prompt = `Extract 3-5 lowercase, single-word or hyphenated tags. Return ONLY comma-separated words:\n\n${content}`;
 
-//     const cohereResponse = await cohere.generate({
-//       model: "command-xlarge",
+//     const response = await cohere.generate({
+//       model: "command",
 //       prompt,
 //       max_tokens: 60,
-//       temperature: 0.6,
+//       temperature: 0.5,
 //     });
 
-//     const raw = cohereResponse.body.generations[0].text.trim();
+//     const raw = response?.generations?.[0]?.text?.trim();
+//     if (!raw) throw new Error("Cohere returned no tag list");
+
 //     const tags = raw
 //       .split(/,|\n/)
-//       .map(t => t.trim().toLowerCase())
+//       .map((t) => t.trim().toLowerCase())
 //       .filter(Boolean);
 
 //     return res.status(200).json({ success: true, tags });
 //   } catch (error) {
 //     console.error("Cohere Tag Suggestion (content) Error:", error);
-//     return res.status(500).json({ message: "Failed to suggest tags", error: error.message });
+//     return res.status(500).json({
+//       message: "Failed to suggest tags",
+//       error: error.message,
+//     });
 //   }
 // };
 
@@ -284,6 +291,9 @@ export const suggestTagsFromContent = async (req, res) => {
 };
  
 
+// check();
+
+/* ----------------------------- HELPERS ----------------------------- */
 
 const toInt = (v) => {
   const n = parseInt(v, 10);
@@ -302,27 +312,20 @@ const normalizeTags = (tags) => {
   return undefined;
 };
 
+/* ------------------------- CREATE NOTE ------------------------- */
 
 export const createNote = async (req, res) => {
   try {
     const { title, content, tags, pinned, favorite } = req.body;
-    const userId = req.user?.id; // Extracted from auth middleware
+    const userId = req.user?.id;
 
     if (!title || !content || !userId) {
-      return res
-        .status(400)
-        .json({ message: "Title, content, and userId are required" });
+      return res.status(400).json({
+        message: "Title, content, and userId are required",
+      });
     }
 
-    // Normalize tags
-    let tagArray = [];
-    if (Array.isArray(tags)) tagArray = tags;
-    else if (typeof tags === "string") {
-      tagArray = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-    }
+    let tagArray = normalizeTags(tags) || [];
 
     const note = await prisma.note.create({
       data: {
@@ -338,18 +341,21 @@ export const createNote = async (req, res) => {
     return res.status(201).json({ success: true, note });
   } catch (error) {
     console.error("Create Note Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to create note", error: error.message });
+    return res.status(500).json({
+      message: "Failed to create note",
+      error: error.message,
+    });
   }
 };
 
+/* ------------------------- GET NOTES ------------------------- */
 
 export const getNotes = async (req, res) => {
   try {
     const authUserId = req.user?.id;
+
     if (!authUserId) {
-      return res.status(401).json({ message: "Unauthorized." });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const { search = "", tag } = req.query;
@@ -375,41 +381,36 @@ export const getNotes = async (req, res) => {
     return res.status(200).json({ success: true, notes });
   } catch (error) {
     console.error("Get Notes Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to fetch notes", error: error.message });
+    return res.status(500).json({
+      message: "Failed to fetch notes",
+      error: error.message,
+    });
   }
 };
 
-
-
-
+/* ------------------------- UPDATE NOTE ------------------------- */
 
 export const updateNote = async (req, res) => {
   try {
     const authUserId = req.user?.id;
     const { id } = req.params;
+
     const noteId = toInt(id);
-    if (!noteId) {
-      return res.status(400).json({ message: "Invalid note id." });
-    }
+    if (!noteId) return res.status(400).json({ message: "Invalid note id" });
 
-    // Fetch existing to support partial update & user ownership
-    const existing = await prisma.note.findUnique({ where: { id: noteId } });
+    const existing = await prisma.note.findUnique({
+      where: { id: noteId },
+    });
+
     if (!existing) {
-      return res.status(404).json({ message: "Note not found." });
-    }
-    if (authUserId && existing.userId !== authUserId) {
-      return res.status(403).json({ message: "Not authorized to edit this note." });
+      return res.status(404).json({ message: "Note not found" });
     }
 
-    const {
-      title,
-      content,
-      tags,
-      pinned,
-      favorite,
-    } = req.body;
+    if (authUserId && existing.userId !== authUserId) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const { title, content, tags, pinned, favorite } = req.body;
 
     const data = {};
     if (typeof title === "string") data.title = title;
@@ -418,11 +419,9 @@ export const updateNote = async (req, res) => {
     const normTags = normalizeTags(tags);
     if (normTags) data.tags = normTags;
 
-  
     if (typeof pinned === "boolean") data.pinned = pinned;
     if (typeof favorite === "boolean") data.favorite = favorite;
 
-    
     const updatedNote = await prisma.note.update({
       where: { id: noteId },
       data,
@@ -431,63 +430,65 @@ export const updateNote = async (req, res) => {
     return res.status(200).json({ success: true, note: updatedNote });
   } catch (error) {
     console.error("Update Note Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to update note", error: error.message });
+    return res.status(500).json({
+      message: "Failed to update note",
+      error: error.message,
+    });
   }
 };
 
-
+/* ------------------------- DELETE NOTE ------------------------- */
 
 export const deleteNote = async (req, res) => {
   try {
     const authUserId = req.user?.id;
     const { id } = req.params;
+
     const noteId = toInt(id);
-    if (!noteId) {
-      return res.status(400).json({ message: "Invalid note id." });
+    if (!noteId) return res.status(400).json({ message: "Invalid note id" });
+
+    const existing = await prisma.note.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Note not found" });
     }
 
-    const existing = await prisma.note.findUnique({ where: { id: noteId } });
-    if (!existing) {
-      return res.status(404).json({ message: "Note not found." });
-    }
     if (authUserId && existing.userId !== authUserId) {
-      return res.status(403).json({ message: "Not authorized to delete this note." });
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     await prisma.note.delete({ where: { id: noteId } });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Note deleted" });
+    return res.status(200).json({ success: true, message: "Note deleted" });
   } catch (error) {
     console.error("Delete Note Error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to delete note", error: error.message });
+    return res.status(500).json({
+      message: "Failed to delete note",
+      error: error.message,
+    });
   }
 };
 
-
+/* ------------------------- PIN / FAVORITE ------------------------- */
 
 export const togglePin = async (req, res) => {
   try {
     const authUserId = req.user?.id;
     const { id } = req.params;
-    const noteId = toInt(id);
-    if (!noteId) {
-      return res.status(400).json({ message: "Invalid note id." });
-    }
 
-    const existing = await prisma.note.findUnique({
-      where: { id: noteId },
-    });
+    const noteId = toInt(id);
+    if (!noteId) return res.status(400).json({ message: "Invalid note id" });
+
+    const existing = await prisma.note.findUnique({ where: { id: noteId } });
+
     if (!existing) {
       return res.status(404).json({ message: "Note not found" });
     }
+
     if (authUserId && existing.userId !== authUserId) {
-      return res.status(403).json({ message: "Not authorized." });
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     const updated = await prisma.note.update({
@@ -498,31 +499,29 @@ export const togglePin = async (req, res) => {
     return res.status(200).json({ success: true, note: updated });
   } catch (error) {
     console.error("togglePin error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to toggle pin", error: error.message });
+    return res.status(500).json({
+      message: "Failed to toggle pin",
+      error: error.message,
+    });
   }
 };
-
-
 
 export const toggleFavorite = async (req, res) => {
   try {
     const authUserId = req.user?.id;
     const { id } = req.params;
-    const noteId = toInt(id);
-    if (!noteId) {
-      return res.status(400).json({ message: "Invalid note id." });
-    }
 
-    const existing = await prisma.note.findUnique({
-      where: { id: noteId },
-    });
+    const noteId = toInt(id);
+    if (!noteId) return res.status(400).json({ message: "Invalid note id" });
+
+    const existing = await prisma.note.findUnique({ where: { id: noteId } });
+
     if (!existing) {
       return res.status(404).json({ message: "Note not found" });
     }
+
     if (authUserId && existing.userId !== authUserId) {
-      return res.status(403).json({ message: "Not authorized." });
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     const updated = await prisma.note.update({
@@ -533,12 +532,14 @@ export const toggleFavorite = async (req, res) => {
     return res.status(200).json({ success: true, note: updated });
   } catch (error) {
     console.error("toggleFavorite error:", error);
-    return res
-      .status(500)
-      .json({ message: "Failed to toggle favorite", error: error.message });
+    return res.status(500).json({
+      message: "Failed to toggle favorite",
+      error: error.message,
+    });
   }
 };
 
+/* ------------------------- SHARE LINK ------------------------- */
 
 export const createShareLink = async (req, res) => {
   try {
@@ -549,15 +550,6 @@ export const createShareLink = async (req, res) => {
     });
 
     if (!note) return res.status(404).json({ message: "Note not found" });
-
-    // // Ensure auth user matches note owner
-    // if (!req.user || note.userId !== req.user.id) {
-    //   return res.status(403).json({ message: "Not authorized" });
-    // }
-//     if (!req.user || parseInt(note.userId) !== parseInt(req.user.id)) {
-//   return res.status(403).json({ message: "Not authorized" });
-// }
-
 
     const updatedNote = await prisma.note.update({
       where: { id: note.id },
@@ -571,7 +563,6 @@ export const createShareLink = async (req, res) => {
   }
 };
 
-// Retrieve a shared note
 export const getSharedNote = async (req, res) => {
   try {
     const { shareId } = req.params;

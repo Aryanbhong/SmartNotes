@@ -1,21 +1,297 @@
 @import "tailwindcss";
 
-.ProseMirror {
-  outline: none;
-}
-.ProseMirror p {
-  margin: 0.5em 0;
-}
-.ProseMirror ul, .ProseMirror ol {
-  padding-left: 1.5em;
-}
-/* Force note preview content to inherit modal text color */
-.note-content *,
-.note-content *:where([style*="color"]) {
-  color: inherit !important;
+@layer base {
+  :root,
+  [data-theme="dark"],
+  .dark {
+    /* Base surfaces */
+    --bg-base: #1B1815;
+    --bg-surface: #24201C;
+    --bg-surface-raised: #2C2823;
+    --bg-surface-hover: #35302A;
+    --bg-surface-active: #3E3832;
+
+    /* Borders */
+    --border-subtle: #2E2923;
+    --border-default: #3E3831;
+    --border-strong: #524B41;
+
+    /* Typography */
+    --text-primary: #EDE8DF;
+    --text-secondary: #C5BFB5;
+    --text-muted: #8E877B;
+    --text-faint: #635D53;
+
+    /* Role-mapped colors: Dark mode */
+    --accent-sage: #7E936D;
+    --accent-sage-text: #EDE8DF;
+    --accent-sage-bg: rgba(126, 147, 109, 0.16);
+    --accent-sage-border: rgba(126, 147, 109, 0.35);
+
+    --accent-peach: #E8A87C;
+    --accent-peach-text: #F1BE9B;
+    --accent-peach-bg: rgba(232, 168, 124, 0.16);
+    --accent-peach-border: rgba(232, 168, 124, 0.35);
+
+    --accent-gold: #D4A043;
+    --accent-gold-text: #E5B45B;
+    --accent-gold-bg: rgba(212, 160, 67, 0.16);
+    --accent-gold-border: rgba(212, 160, 67, 0.4);
+
+    --accent-heart: #D47750;
+    --accent-heart-bg: rgba(212, 119, 80, 0.2);
+
+    --color-destructive: #C45757;
+    --color-destructive-bg: rgba(196, 87, 87, 0.16);
+    --color-destructive-border: rgba(196, 87, 87, 0.35);
+
+    --card-shadow: none;
+  }
+
+  [data-theme="light"],
+  .light {
+    /* Base surfaces */
+    --bg-base: #F6F2E9;
+    --bg-surface: #FFFFFF;
+    --bg-surface-raised: #FAF7F0;
+    --bg-surface-hover: #ECE5D8;
+    --bg-surface-active: #E2D9C9;
+
+    /* Borders */
+    --border-subtle: #E8E1D3;
+    --border-default: #DCD3C3;
+    --border-strong: #C4B9A5;
+
+    /* Typography */
+    --text-primary: #1B1815;
+    --text-secondary: #4A433A;
+    --text-muted: #786F62;
+    --text-faint: #A59B8C;
+
+    /* Role-mapped colors: Light mode (WCAG AA compliant contrast) */
+    --accent-sage: #5C6E4E;
+    --accent-sage-text: #2F3C25;
+    --accent-sage-bg: rgba(92, 110, 78, 0.12);
+    --accent-sage-border: rgba(92, 110, 78, 0.32);
+
+    --accent-peach: #C16D3B;
+    --accent-peach-text: #6E3512;
+    --accent-peach-bg: rgba(232, 168, 124, 0.2);
+    --accent-peach-border: rgba(232, 168, 124, 0.42);
+
+    --accent-gold: #9E6B17;
+    --accent-gold-text: #63430A;
+    --accent-gold-bg: rgba(184, 132, 42, 0.14);
+    --accent-gold-border: rgba(184, 132, 42, 0.38);
+
+    --accent-heart: #C1633C;
+    --accent-heart-text: #782F10;
+    --accent-heart-bg: rgba(193, 99, 60, 0.14);
+
+    --color-destructive: #9C3333;
+    --color-destructive-bg: rgba(156, 51, 51, 0.12);
+    --color-destructive-border: rgba(156, 51, 51, 0.3);
+
+    --card-shadow: 0 4px 20px -2px rgba(27, 24, 21, 0.05), 0 2px 6px -1px rgba(27, 24, 21, 0.03);
+  }
+
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+  }
+
+  h1, h2, h3, h4, .font-serif, .font-fraunces {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+
+  code, kbd, .font-mono {
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  .font-caveat, .font-handwriting {
+    font-family: 'Caveat', cursive;
+  }
 }
 
-/* Optional: scale down giant headings from pasted HTML editors */
-.note-content h1 { font-size: 1.5em !important; }
-.note-content h2 { font-size: 1.25em !important; }
-.note-content h3 { font-size: 1.125em !important; }
+/* Warm Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ----------------------------------------------------
+   THE MOTION RULE
+   "Motion means busy. Stillness means it's your call."
+   ---------------------------------------------------- */
+
+@keyframes goldOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Circling gold light while AI is working */
+.ai-orbit-active {
+  position: relative;
+  overflow: hidden;
+  border-color: transparent !important;
+}
+
+.ai-orbit-active::before {
+  content: "";
+  position: absolute;
+  inset: -120%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(212, 160, 67, 0.95) 340deg,
+    transparent 360deg
+  );
+  animation: goldOrbit 3.5s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ai-orbit-active::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  background: var(--bg-surface);
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.ai-orbit-active > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Still gold border when AI finishes and waits for the user */
+.ai-waiting-review {
+  border: 1px solid var(--accent-gold) !important;
+  box-shadow: 0 0 0 1px var(--accent-gold-bg);
+}
+
+/* Heart bloom for success moments */
+@keyframes heartBloom {
+  0% { transform: scale(0.85); opacity: 0; }
+  50% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-heart-bloom {
+  animation: heartBloom 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-orbit-active::before {
+    animation: none;
+    background: none;
+  }
+  .ai-orbit-active {
+    border: 1px solid var(--accent-gold) !important;
+  }
+  .ai-orbit-active::after {
+    display: none;
+  }
+  .animate-heart-bloom {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Soft paper notebook ruling */
+.notebook-ruled-light {
+  background-image: repeating-linear-gradient(0deg, var(--bg-surface) 0px, var(--bg-surface) 29px, var(--border-subtle) 30px);
+  background-size: 100% 30px;
+}
+.notebook-ruled-dark {
+  background-image: repeating-linear-gradient(0deg, var(--bg-surface) 0px, var(--bg-surface) 29px, var(--border-subtle) 30px);
+  background-size: 100% 30px;
+}
+
+/* TipTap Editor Prose */
+.ProseMirror {
+  outline: none;
+  min-height: 240px;
+  color: var(--text-primary);
+  font-family: 'Manrope', sans-serif;
+  line-height: 1.75;
+}
+.ProseMirror p {
+  margin: 0.5rem 0;
+}
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  color: var(--text-primary);
+  margin: 1.25rem 0 0.5rem;
+}
+.ProseMirror h1 { font-size: 1.75rem; font-weight: 700; }
+.ProseMirror h2 { font-size: 1.35rem; font-weight: 600; }
+.ProseMirror h3 { font-size: 1.15rem; font-weight: 600; }
+.ProseMirror ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
+.ProseMirror ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.ProseMirror blockquote {
+  border-left: 3px solid var(--accent-sage);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.ProseMirror pre {
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.ProseMirror code {
+  background: var(--bg-surface-hover);
+  color: var(--accent-sage);
+  font-family: 'IBM Plex Mono', monospace;
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.875em;
+}
+.ProseMirror mark {
+  background-color: var(--accent-gold-bg);
+  color: var(--accent-gold);
+  border-radius: 0.2rem;
+  padding: 0.1rem 0.3rem;
+}
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
+  accent-color: var(--accent-sage);
+  margin-top: 0.25rem;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-faint);
+  pointer-events: none;
+  height: 0;
+}

@@ -1,71 +1,107 @@
-import React from "react";
-import { X } from "lucide-react";
+import React, { useEffect } from "react";
+import { X, Tag as TagIcon, FileText } from "lucide-react";
 
+const ViewNoteModal = ({ note, onClose, darkMode = false }) => {
+  useEffect(() => {
+    if (!note) return;
 
-const ViewNoteModal = ({ note, onClose, darkMode }) => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [note, onClose]);
+
   if (!note) return null;
 
-  const paperStyle = !darkMode
+  const theme = darkMode
     ? {
-        backgroundImage:
-          "repeating-linear-gradient(0deg,#ffffff 0px,#ffffff 31px,rgba(59,130,246,0.15) 32px)",
-        backgroundSize: "100% 32px",
+        modal: "bg-[#292720] border-[#49463D] text-[#F6F2E9]",
+        header: "border-[#49463D]",
+        title: "text-[#D5DFC9]",
+        content: "text-[#D6D0C4]",
+        muted: "text-[#B5AE9F]",
+        tag: "bg-[#41483A] text-[#D5DFC9] border-[#5C6E4E]/50",
+        footer: "border-[#49463D] bg-[#302F27]",
+        close: "bg-[#5C6E4E] text-white hover:bg-[#4B5C3F]",
+        iconButton: "text-[#B5AE9F] hover:bg-[#414035] hover:text-[#F6F2E9]",
       }
-    : {};
+    : {
+        modal: "bg-[#FDFBF6] border-[#E7E0D4] text-[#292720]",
+        header: "border-[#E7E0D4]",
+        title: "text-[#4B5C3F]",
+        content: "text-[#5F5A50]",
+        muted: "text-[#817C70]",
+        tag: "bg-[#E5E9DE] text-[#4B5C3F] border-[#D7DFCE]",
+        footer: "border-[#E7E0D4] bg-[#F6F2E9]",
+        close: "bg-[#5C6E4E] text-white hover:bg-[#4B5C3F]",
+        iconButton: "text-[#817C70] hover:bg-[#F1EDE3] hover:text-[#292720]",
+      };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-      role="dialog"
-      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#292720]/55 p-4 backdrop-blur-sm"
+      onClick={onClose}
+      role="presentation"
     >
       <div
-        className={`relative w-full max-w-2xl rounded-2xl shadow-2xl border p-0 overflow-hidden
-          ${darkMode ? "bg-gray-900 border-gray-700 text-gray-100" : "bg-white border-gray-200 text-gray-900"}`}
-        style={paperStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="view-note-title"
+        className={`relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl shadow-[#292720]/20 animate-in fade-in zoom-in-95 duration-200 ${theme.modal}`}
+        onClick={(event) => event.stopPropagation()}
       >
-       
-        <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-3 border-b
-                        dark:border-gray-700 border-blue-200/40">
-          <h2 className="text-2xl sm:text-3xl font-bold leading-tight text-blue-600 dark:text-blue-400 break-words">
-            {note.title}
-          </h2>
+        {/* Header */}
+        <div className={`flex items-start justify-between gap-4 border-b px-6 py-5 ${theme.header}`}>
+          <div className="min-w-0">
+            <div className={`mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-widest ${theme.muted}`}>
+              <FileText size={14} />
+              Note details
+            </div>
+
+            <h2
+              id="view-note-title"
+              className={`break-words font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl ${theme.title}`}
+            >
+              {note.title || "Untitled note"}
+            </h2>
+          </div>
+
           <button
-            aria-label="Close"
+            type="button"
+            aria-label="Close note"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-[#5C6E4E]/40 ${theme.iconButton}`}
           >
-            <X size={22} />
+            <X size={20} />
           </button>
         </div>
 
-    
-        <div
-          className="max-h-[65vh] overflow-y-auto px-6 py-5 space-y-8
-                     text-base sm:text-lg leading-7 note-content"
-        >
-         
+        {/* Note content */}
+        <div className="max-h-[65vh] flex-1 overflow-y-auto px-6 py-6">
           <div
-            className="prose dark:prose-invert max-w-none break-words
-                       prose-headings:text-blue-600 dark:prose-headings:text-blue-400
-                       prose-p:my-2 prose-li:my-1 text-gray-700"
-            
-            dangerouslySetInnerHTML={{ __html: note.content }}
+            className={`prose prose-sm max-w-none break-words leading-7 sm:prose-base ${
+              darkMode ? "prose-invert" : ""
+            } ${theme.content}`}
+            dangerouslySetInnerHTML={{
+              __html: note.content || "",
+            }}
           />
 
-     
+          {/* Tags */}
           {note.tags?.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold mb-3 uppercase tracking-wide
-                             text-gray-600 dark:text-gray-400">
+            <div className={`mt-8 border-t pt-5 ${theme.header}`}>
+              <h3 className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest ${theme.muted}`}>
+                <TagIcon size={14} />
                 Tags
-              </h4>
+              </h3>
+
               <div className="flex flex-wrap gap-2">
-                {note.tags.map((tag, i) => (
+                {note.tags.map((tag, index) => (
                   <span
-                    key={i}
-                    className={`px-3 py-1 rounded-full text-xs font-medium shadow-sm
-                      ${darkMode ? "bg-gray-800 text-gray-200" : "bg-blue-100 text-blue-700"}`}
+                    key={`${tag}-${index}`}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium ${theme.tag}`}
                   >
                     #{tag}
                   </span>
@@ -73,19 +109,32 @@ const ViewNoteModal = ({ note, onClose, darkMode }) => {
               </div>
             </div>
           )}
+
+          {/* Summary */}
+          {note.summary && (
+            <div className={`mt-6 rounded-xl border p-4 ${
+              darkMode
+                ? "border-[#5C6E4E]/50 bg-[#353C30]"
+                : "border-[#D7DFCE] bg-[#EEF0E8]"
+            }`}>
+              <h3 className={`mb-2 text-xs font-semibold uppercase tracking-widest ${
+                darkMode ? "text-[#D5DFC9]" : "text-[#4B5C3F]"
+              }`}>
+                Summary
+              </h3>
+              <p className={`whitespace-pre-line break-words text-sm leading-6 ${theme.content}`}>
+                {note.summary}
+              </p>
+            </div>
+          )}
         </div>
 
-       
-        <div
-          className={`px-6 py-4 text-right border-t
-            ${darkMode ? "border-gray-700" : "border-blue-200/40"}`}
-        >
+        {/* Footer */}
+        <div className={`flex justify-end border-t px-6 py-4 ${theme.footer}`}>
           <button
+            type="button"
             onClick={onClose}
-            className={`px-5 py-2 rounded-lg font-semibold shadow-sm transition transform hover:scale-105
-              ${darkMode
-                ? "bg-gray-700 text-gray-700 hover:bg-gray-600"
-                : "bg-blue-500 text-white hover:bg-blue-600"}`}
+            className={`rounded-xl px-6 py-2.5 text-sm font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#5C6E4E]/40 focus:ring-offset-2 ${theme.close}`}
           >
             Close
           </button>

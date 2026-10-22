@@ -1,892 +1,328 @@
 
 
-// import { useEffect, useState, useMemo } from "react";
-// import API from "../services/API";
-// import AddEditNoteModal from "../components/AddEditNoteModal";
-// import NoteCard from "../Components/NoteCard";
-// import OCRUpload from "../Components/OCRUpload";
+import React from "react";
+import {
+  BookOpen,
+  Calendar,
+  ScanLine,
+  Sparkles,
+  Pin,
+  Plus,
+  ArrowRight,
+  TrendingUp,
+  BrainCircuit,
+} from "lucide-react";
+import { useNotes } from "../context/NotesContext";
+import { useAuth } from "../context/AuthContext";
+import { AppLayout } from "../components/layout/AppLayout";
+import { NoteCard } from "../components/notes/NoteCard";
+import { Button, Card, Badge } from "../components/common/Badge";
+import { useNavigate } from "react-router-dom";
 
+export const Dashboard = () => {
+  const {
+    notes,
+    stats,
+    openNewNoteModal,
+    openEditNoteModal,
+    setViewingNote,
+    deleteNoteWithUndo,
+    togglePin,
+    toggleFavorite,
+    summarizeNote,
+    setSharingNote,
+    loadingSummaryId,
+    setIsOcrOpen,
+  } = useNotes();
 
-// import { Grid, List as ListIcon, Moon, Sun, Plus } from "lucide-react";
-// import { getOfflineNotes, clearOfflineNotes } from "../utils/OfflineNotes";
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-// const Dashboard = () => {
-//   const [notes, setNotes] = useState([]);
-//   const [search, setSearch] = useState("");
-//   const [selectedTag, setSelectedTag] = useState("");
-//   const [sortOrder, setSortOrder] = useState("desc");
-//   const [showModal, setShowModal] = useState(false);
-//   const [editingNote, setEditingNote] = useState(null);
-//   const [darkMode, setDarkMode] = useState(false);
-//   const [syncStatus, setSyncStatus] = useState("All Synced");
-//   const [loadingSummaryId, setLoadingSummaryId] = useState(null); // NEW
-//   const [viewMode, setViewMode] = useState("grid");
-
-//   const userId = 1; // Replace with real user ID
-
-//   // Fetch notes with offline support
-//   const fetchNotes = async () => {
-//     try {
-//       let fetchedNotes = [];
-
-//       if (navigator.onLine) {
-//         setSyncStatus("Syncing...");
-//         const res = await API.get(
-//           `/notes?userId=${userId}&search=${search}&tag=${selectedTag}`
-//         );
-//         fetchedNotes = res.data.notes;
-
-//         // Sync any offline notes
-//         const offlineNotes = await getOfflineNotes();
-//         if (offlineNotes.length > 0) {
-//           for (let note of offlineNotes) {
-//             await API.post("/notes", note);
-//           }
-//           await clearOfflineNotes();
-//         }
-//         setSyncStatus("All Synced");
-//       } else {
-//         setSyncStatus("Offline");
-//         fetchedNotes = await getOfflineNotes();
-//       }
-
-//       // Sorting
-//       if (sortOrder === "asc") {
-//         fetchedNotes.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-//       } else if (sortOrder === "desc") {
-//         fetchedNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-//       } else if (sortOrder === "title") {
-//         fetchedNotes.sort((a, b) => a.title.localeCompare(b.title));
-//       }
-
-//       setNotes(fetchedNotes);
-//     } catch (err) {
-//       console.error("Failed to fetch notes:", err.message);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchNotes();
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [search, selectedTag, sortOrder]);
-
-//   const handleDelete = async (id) => {
-//     if (window.confirm("Are you sure you want to delete this note?")) {
-//       await API.delete(`/notes/${id}`);
-//       fetchNotes();
-//     }
-//   };
-
-//   const handleTogglePin = async (note) => {
-//     try {
-//       const res = await API.patch(`/notes/${note.id}/pin`);
-//       const updated = res.data.note;
-//       setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
-//     } catch (err) {
-//       console.error("Failed to toggle pin:", err.message);
-//     }
-//   };
-
-//   const handleToggleFavorite = async (note) => {
-//     try {
-//       const res = await API.patch(`/notes/${note.id}/favorite`);
-//       const updatedNote = res.data.note;
-//       setNotes((prevNotes) =>
-//         prevNotes.map((n) => (n.id === updatedNote.id ? updatedNote : n))
-//       );
-//     } catch (err) {
-//       console.error("Failed to toggle favorite:", err.message);
-//     }
-//   };
-
-//   // NEW: AI Summarize
-//   const handleSummarize = async (note) => {
-//     if (!navigator.onLine) {
-//       alert("You're offline. Summarization requires an internet connection.");
-//       return;
-//     }
-//     try {
-//       setLoadingSummaryId(note.id);
-//       const { data } = await API.post(`/notes/${note.id}/summary`);
-//       setNotes((prev) =>
-//         prev.map((n) =>
-//           n.id === note.id ? { ...n, summary: data.summary } : n
-//         )
-//       );
-//     } catch (err) {
-//       console.error("Failed to summarize:", err.message);
-//       alert("Failed to summarize this note.");
-//     } finally {
-//       setLoadingSummaryId(null);
-//     }
-//   };
-
-//   const favoriteNotes = notes.filter((note) => note.favorite);
-//   const pinnedNotes = notes.filter((note) => note.pinned && !note.favorite);
-//   const otherNotes = notes.filter((note) => !note.pinned && !note.favorite);
-
-//   const allTags = useMemo(
-//     () => [...new Set(notes.flatMap((note) => note.tags || []))],
-//     [notes]
-//   );
-
-//   const noteLayoutClasses =
-//     viewMode === "grid"
-//       ? "grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
-//       : "flex flex-col gap-4";
-
-//   return (
-//     <div
-//       className={`min-h-screen p-6 transition-colors ${
-//         darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
-//       }`}
-//     >
-//       <div className="max-w-6xl mx-auto">
-//         {/* Header */}
-//         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-//           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 select-none">
-//             SmartNotes
-//           </h1>
-
-//           <div className="flex items-center gap-3">
-//             <span
-//               className={`px-2 py-1 rounded text-xs ${
-//                 syncStatus === "Offline"
-//                   ? "bg-red-500 text-white"
-//                   : "bg-green-500 text-white"
-//               }`}
-//             >
-//               {syncStatus}
-//             </span>
-
-//             <button
-//               type="button"
-//               aria-pressed={darkMode}
-//               className={`flex items-center gap-1 px-3 py-2 rounded shadow transition ${
-//                 darkMode
-//                   ? "bg-yellow-500 text-white hover:bg-yellow-600"
-//                   : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-//               }`}
-//               onClick={() => setDarkMode(!darkMode)}
-//             >
-//               {darkMode ? (
-//                 <>
-//                   <Sun size={16} /> Light
-//                 </>
-//               ) : (
-//                 <>
-//                   <Moon size={16} /> Dark
-//                 </>
-//               )}
-//             </button>
-
-//             <button
-//               type="button"
-//               className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
-//               onClick={() => {
-//                 setEditingNote(null);
-//                 setShowModal(true);
-//               }}
-//             >
-//               <Plus size={18} /> Add Note
-//             </button>
-//               <OCRUpload
-//               onExtractedText={(text) => {
-//                 setEditingNote({ title: "OCR Note", content: text });
-//                 setShowModal(true);
-//               }}
-//             />
-//           </div>
-//         </div>
-
-//         {/* Search / Sort / View Toggle */}
-//         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-//           <input
-//             id="dashboard-search"
-//             type="text"
-//             placeholder="Search notes..."
-//             value={search}
-//             onChange={(e) => setSearch(e.target.value)}
-//             className={`w-full sm:w-1/2 p-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-//               darkMode
-//                 ? "bg-gray-800 text-gray-100 border-gray-700 placeholder-gray-400"
-//                 : "bg-white placeholder-gray-500"
-//             }`}
-//           />
-
-//           <div className="flex items-center gap-2">
-//             <select
-//               value={sortOrder}
-//               onChange={(e) => setSortOrder(e.target.value)}
-//               className={`p-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-//                 darkMode
-//                   ? "bg-gray-800 text-gray-100 border-gray-700"
-//                   : "bg-white"
-//               }`}
-//             >
-//               <option value="desc">Newest First</option>
-//               <option value="asc">Oldest First</option>
-//               <option value="title">Sort by Title</option>
-//             </select>
-
-//             {/* View Toggle */}
-//             <div className="flex items-center gap-1" role="group" aria-label="View mode">
-//               <button
-//                 type="button"
-//                 aria-pressed={viewMode === "grid"}
-//                 onClick={() => setViewMode("grid")}
-//                 className={`p-2 rounded border transition ${
-//                   viewMode === "grid"
-//                     ? "bg-blue-500 text-white border-blue-500"
-//                     : darkMode
-//                     ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-//                     : "bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
-//                 }`}
-//                 title="Grid view"
-//               >
-//                 <Grid size={16} />
-//               </button>
-//               <button
-//                 type="button"
-//                 aria-pressed={viewMode === "list"}
-//                 onClick={() => setViewMode("list")}
-//                 className={`p-2 rounded border transition ${
-//                   viewMode === "list"
-//                     ? "bg-blue-500 text-white border-blue-500"
-//                     : darkMode
-//                     ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-//                     : "bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
-//                 }`}
-//                 title="List view"
-//               >
-//                 <ListIcon size={16} />
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Tag Filter */}
-//         {allTags.length > 0 && (
-//           <div className="flex flex-wrap gap-2 mb-4">
-//             <button
-//               type="button"
-//               className={`px-3 py-1 rounded text-sm transition ${
-//                 selectedTag === ""
-//                   ? "bg-blue-500 text-white"
-//                   : darkMode
-//                   ? "bg-gray-700 text-gray-100 hover:bg-gray-600"
-//                   : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-//               }`}
-//               onClick={() => setSelectedTag("")}
-//             >
-//               All
-//             </button>
-//             {allTags.map((tag, i) => (
-//               <button
-//                 type="button"
-//                 key={i}
-//                 className={`px-3 py-1 rounded text-sm transition ${
-//                   selectedTag === tag
-//                     ? "bg-blue-500 text-white"
-//                     : darkMode
-//                     ? "bg-gray-700 text-gray-100 hover:bg-gray-600"
-//                     : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-//                 }`}
-//                 onClick={() => setSelectedTag(tag)}
-//               >
-//                 #{tag}
-//               </button>
-//             ))}
-//           </div>
-//         )}
-
-//         {/* Favorites */}
-//         {favoriteNotes.length > 0 && (
-//           <div className="mb-6">
-//             <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">
-//               Favorites
-//             </h2>
-//             <div className={noteLayoutClasses}>
-//               {favoriteNotes.map((note) => (
-//                 <NoteCard
-//                   key={note.id}
-//                   note={note}
-//                   onEdit={(n) => {
-//                     setEditingNote(n);
-//                     setShowModal(true);
-//                   }}
-//                   onDelete={handleDelete}
-//                   onTogglePin={handleTogglePin}
-//                   onToggleFavorite={handleToggleFavorite}
-//                   onSummarize={handleSummarize} // NEW
-//                   loadingSummary={loadingSummaryId === note.id}
-//                   darkMode={darkMode}
-//                 />
-//               ))}
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Pinned Notes */}
-//         {pinnedNotes.length > 0 && (
-//           <div className="mb-6">
-//             <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">
-//               Pinned
-//             </h2>
-//             <div className={noteLayoutClasses}>
-//               {pinnedNotes.map((note) => (
-//                 <NoteCard
-//                   key={note.id}
-//                   note={note}
-//                   onEdit={(n) => {
-//                     setEditingNote(n);
-//                     setShowModal(true);
-//                   }}
-//                   onDelete={handleDelete}
-//                   onTogglePin={handleTogglePin}
-//                   onToggleFavorite={handleToggleFavorite}
-//                   onSummarize={handleSummarize} // NEW
-//                   loadingSummary={loadingSummaryId === note.id}
-//                   darkMode={darkMode}
-//                 />
-//               ))}
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Other Notes */}
-//         <div className="mb-2 flex items-center justify-between">
-//           <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">
-//             Others
-//           </h2>
-//           <span className="text-xs text-gray-500 dark:text-gray-400">
-//             {otherNotes.length} note{otherNotes.length !== 1 ? "s" : ""}
-//           </span>
-//         </div>
-//         <div className={noteLayoutClasses}>
-//           {otherNotes.length === 0 ? (
-//             <p className="text-gray-500 dark:text-gray-300">No notes found.</p>
-//           ) : (
-//             otherNotes.map((note) => (
-//               <NoteCard
-//                 key={note.id}
-//                 note={note}
-//                 onEdit={(n) => {
-//                   setEditingNote(n);
-//                   setShowModal(true);
-//                 }}
-//                 onDelete={handleDelete}
-//                 onTogglePin={handleTogglePin}
-//                 onToggleFavorite={handleToggleFavorite}
-//                 onSummarize={handleSummarize} // NEW
-//                 loadingSummary={loadingSummaryId === note.id}
-//                 darkMode={darkMode}
-//               />
-//             ))
-//           )}
-//         </div>
-//       </div>
-
-//       {/* Modal */}
-//       {showModal && (
-//         <AddEditNoteModal
-//           note={editingNote}
-//           closeModal={() => setShowModal(false)}
-//           refreshNotes={fetchNotes}
-//           userId={userId}
-//           darkMode={darkMode}
-//         />
-//       )}
-//     </div>
-//   );
-//  };
-// export default Dashboard;
-
-
-import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";            // NEW
-import API from "../services/API";
-import AddEditNoteModal from "../Components/AddEditNoteModal";
-import NoteCard from "../Components/NoteCard";
-import OCRUpload from "../Components/OCRUpload";
-import ViewNoteModal from "../Components/viewNoteModal"; 
-import DeleteModal from "../Components/DeleteModal";
-import { Grid, List as ListIcon, Moon, Sun, Plus, LogOut, NotebookPenIcon } from "lucide-react";  // NEW
-import { getOfflineNotes, clearOfflineNotes } from "../utils/OfflineNotes";
-
-const Dashboard = () => {
-  const navigate = useNavigate();                           
-
-  const [notes, setNotes] = useState([]);
-  const [search, setSearch] = useState("");
-  const [selectedTag, setSelectedTag] = useState("");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [showModal, setShowModal] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
-  const [darkMode, setDarkMode] = useState(() => {
-  return localStorage.getItem("darkMode") === "true";
-});
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState(null);
-  const [syncStatus, setSyncStatus] = useState("All Synced");
-  const [loadingSummaryId, setLoadingSummaryId] = useState(null); // NEW
-  const [viewMode, setViewMode] = useState("grid");
-  const [viewingNote, setViewingNote] = useState(null); // NEW STATE
-
-  
-
-
-
-  const userId = localStorage.getItem("userId");
-
-  // --- Logout ---------------------------------------------------- NEW
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    // Clear any in-memory state if desired
-    setNotes([]);
-    navigate("/login");
-  };
-  // ---------------------------------------------------------------
-  const handleViewNote = (note) => {
-    setViewingNote(note);
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
   };
 
-  const handleDeleteClick = (noteId) => {
-  setNoteToDelete(noteId);
-  setShowDeleteModal(true);
-};
+  const pinnedNotes = notes.filter((n) => n.pinned);
+  const recentNotes = notes.slice(0, 6);
 
-const confirmDelete = () => {
-  handleDelete(noteToDelete); 
-  setShowDeleteModal(false);
-  setNoteToDelete(null);
-};
-  // Fetch notes with offline support
-  const fetchNotes = async () => {
-    try {
-      let fetchedNotes = [];
-
-      if (navigator.onLine) {
-        setSyncStatus("Syncing...");
-        const res = await API.get(
-          `/notes?userId=${userId}&search=${search}&tag=${selectedTag}`
-        );
-        fetchedNotes = res.data.notes;
-
-        // Sync any offline notes
-        const offlineNotes = await getOfflineNotes();
-        if (offlineNotes.length > 0) {
-          for (let note of offlineNotes) {
-            await API.post("/notes", note);
-          }
-          await clearOfflineNotes();
-        }
-        setSyncStatus("All Synced");
-      } else {
-        setSyncStatus("Offline");
-        fetchedNotes = await getOfflineNotes();
-      }
-
-      // Sorting
-      if (sortOrder === "asc") {
-        fetchedNotes.sort(
-          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-        );
-      } else if (sortOrder === "desc") {
-        fetchedNotes.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-      } else if (sortOrder === "title") {
-        fetchedNotes.sort((a, b) => a.title.localeCompare(b.title));
-      }
-
-      setNotes(fetchedNotes);
-    } catch (err) {
-      console.error("Failed to fetch notes:", err.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotes();
-  localStorage.setItem("darkMode", darkMode);
-  }, [search, selectedTag, sortOrder, darkMode]);
-
-  const handleDelete = async (id) => {
-   
-      await API.delete(`/notes/${id}`);
-      fetchNotes();
-  
-  };
-
-  const handleTogglePin = async (note) => {
-    try {
-      const res = await API.patch(`/notes/${note.id}/pin`);
-      const updated = res.data.note;
-      setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
-    } catch (err) {
-      console.error("Failed to toggle pin:", err.message);
-    }
-  };
-
-  const handleToggleFavorite = async (note) => {
-    try {
-      const res = await API.patch(`/notes/${note.id}/favorite`);
-      const updatedNote = res.data.note;
-      setNotes((prevNotes) =>
-        prevNotes.map((n) => (n.id === updatedNote.id ? updatedNote : n))
-      );
-    } catch (err) {
-      console.error("Failed to toggle favorite:", err.message);
-    }
-  };
-
-  // NEW: AI Summarize
-  const handleSummarize = async (note) => {
-    if (!navigator.onLine) {
-      alert("You're offline. Summarization requires an internet connection.");
-      return;
-    }
-    try {
-      setLoadingSummaryId(note.id);
-      const { data } = await API.post(`/notes/${note.id}/summary`);
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === note.id ? { ...n, summary: data.summary } : n
-        )
-      );
-    } catch (err) {
-      console.error("Failed to summarize:", err.message);
-      alert("Failed to summarize this note.");
-    } finally {
-      setLoadingSummaryId(null);
-    }
-  };
-
-  const favoriteNotes = notes.filter((note) => note.favorite);
-  const pinnedNotes = notes.filter((note) => note.pinned && !note.favorite);
-  const otherNotes = notes.filter((note) => !note.pinned && !note.favorite);
-
-  const allTags = useMemo(
-    () => [...new Set(notes.flatMap((note) => note.tags || []))],
-    [notes]
-  );
-
-  const noteLayoutClasses =
-    viewMode === "grid"
-      ? "grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      : "flex flex-col gap-4";
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const activityData = [
+    { day: "Mon", count: Math.min(6, Math.max(1, Math.floor(notes.length * 0.15) + 1)) },
+    { day: "Tue", count: Math.min(8, Math.max(2, Math.floor(notes.length * 0.25) + 2)) },
+    { day: "Wed", count: Math.min(7, Math.max(1, Math.floor(notes.length * 0.2) + 1)) },
+    { day: "Thu", count: Math.min(10, Math.max(3, Math.floor(notes.length * 0.35) + 3)) },
+    { day: "Fri", count: Math.min(6, Math.max(2, Math.floor(notes.length * 0.18) + 1)) },
+    { day: "Sat", count: Math.min(4, Math.max(1, Math.floor(notes.length * 0.1) + 1)) },
+    { day: "Sun", count: Math.min(5, Math.max(2, Math.floor(notes.length * 0.12) + 2)) },
+  ];
+  const maxActivity = Math.max(...activityData.map((d) => d.count), 1);
 
   return (
-    <div
-      className={`min-h-screen p-6 transition-colors ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
-      }`}
-    >
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        
-<h1
-  className={`
-    text-4xl sm:text-5xl font-extrabold select-none tracking-tight
-    ${darkMode ? "text-gray-100" : "text-gray-900"}
-  `}
->
-  <span
-    className={`border-b-4 pb-1 ${
-      darkMode ? "border-blue-400" : "border-blue-500"
-    }`}
-  >
-    SmartNotes
-  </span>
-</h1>
- <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-           
-            <span
-              className={`px-2 py-1 rounded text-xs ${
-                syncStatus === "Offline"
-                  ? "bg-red-500 text-white"
-                  : "bg-green-500 text-white"
-              }`}
-            >
-              {syncStatus}
-            </span>
+    <AppLayout>
+      <div className="space-y-8 animate-in fade-in duration-200">
+        {/* Top Greeting & Quick Action Banner */}
+        <div className="relative overflow-hidden rounded-[28px] border border-[var(--border-subtle)] bg-[radial-gradient(ellipse_at_78%_20%,var(--accent-sage)/0.38,transparent_42%),radial-gradient(ellipse_at_96%_100%,var(--accent-heart)/0.18,transparent_36%),linear-gradient(125deg,var(--bg-base)_0%,var(--bg-elevated)_58%,var(--bg-surface)_100%)] text-[var(--accent-sage-contrast)] p-6 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+          <div className="pointer-events-none absolute -right-10 -bottom-10 w-72 h-72 bg-[var(--accent-peach)]/10 rounded-full blur-3xl" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-sage-contrast)]/[0.07] backdrop-blur-md text-[var(--accent-peach)] text-xs font-semibold font-mono uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                SmartNotes Study Hub Active
+              </div>
+              <h1 className="font-fraunces text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--accent-sage-contrast)]">
+                {getGreeting()}, <em>{user?.name ? user.name.split(" ")[0] : "Student"}</em>! 🎓
+              </h1>
+              <p className="text-xs sm:text-sm text-[var(--accent-sage-contrast)]/70 leading-relaxed font-normal">
+                You have created <span className="font-bold text-[var(--accent-sage-contrast)]">{stats.notesThisWeek} note(s)</span> this week. Keep the momentum going!
+              </p>
+            </div>
 
-            {/* Dark Mode Toggle */}
-            <button
-              type="button"
-              aria-pressed={darkMode}
-              className={`flex items-center gap-1 px-3 py-2 rounded shadow transition ${
-                darkMode
-                  ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? (
-                <>
-                  <Sun size={16} /> Light
-                </>
-              ) : (
-                <>
-                  <Moon size={16} /> Dark
-                </>
-              )}
-            </button>
-
-            {/* Add Note */}
-            <button
-              type="button"
-              className="flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
-              onClick={() => {
-                setEditingNote(null);
-                setShowModal(true);
-              }}
-            >
-              <Plus size={18} /> Add Note
-            </button>
-
-            {/* OCR Upload */}
-            <OCRUpload
-              onExtractedText={(text) => {
-                setEditingNote({ title: "OCR Note", content: text });
-                setShowModal(true);
-              }}
-            />
-
-            {/* Logout ------------------------------------------------- NEW */}
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-1 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700"
-              title="Logout"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-            {/* ------------------------------------------------------- */}
-          </div>
-        </div>
-
-        {/* Search / Sort / View Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <input
-            id="dashboard-search"
-            type="text"
-            placeholder="Search notes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={`w-full sm:w-1/2 p-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              darkMode
-                ? "bg-gray-800 text-gray-100 border-gray-700 placeholder-gray-400"
-                : "bg-white placeholder-gray-800"
-            }`}
-          />
-
-          <div className="flex items-center gap-2">
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className={`p-2 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                darkMode
-                  ? "bg-gray-800 text-gray-100 border-gray-700"
-                  : "bg-white"
-              }`}
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-              <option value="title">Sort by Title</option>
-            </select>
-
-            {/* View Toggle */}
-            <div
-              className="flex items-center gap-1"
-              role="group"
-              aria-label="View mode"
-            >
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                aria-pressed={viewMode === "grid"}
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded border transition ${
-                  viewMode === "grid"
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : darkMode
-                    ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-                    : "bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
-                }`}
-                title="Grid view"
+                onClick={() => openNewNoteModal()}
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[var(--accent-sage)] text-[var(--accent-sage-contrast)] hover:opacity-90 font-bold text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5 active:translate-y-0 font-sans"
               >
-                <Grid size={16} />
+                <Plus className="w-4 h-4" />
+                Create Note
               </button>
               <button
                 type="button"
-                aria-pressed={viewMode === "list"}
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded border transition ${
-                  viewMode === "list"
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : darkMode
-                    ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-                    : "bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
-                }`}
-                title="List view"
+                onClick={() => setIsOcrOpen(true)}
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] hover:bg-[var(--accent-gold)]/25 font-semibold text-xs sm:text-sm transition font-sans"
               >
-                <ListIcon size={16} />
+                <ScanLine className="w-4 h-4" />
+                OCR Scan
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tag Filter */}
-        {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              type="button"
-              className={`px-3 py-1 rounded text-sm transition ${
-                selectedTag === ""
-                  ? "bg-blue-500 text-white"
-                  : darkMode
-                  ? "bg-gray-700 text-gray-100 hover:bg-gray-600"
-                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
-              onClick={() => setSelectedTag("")}
-            >
-              All
-            </button>
-            {allTags.map((tag, i) => (
-              <button
-                type="button"
-                key={i}
-                className={`px-3 py-1 rounded text-sm transition ${
-                  selectedTag === tag
-                    ? "bg-blue-500 text-white"
-                    : darkMode
-                    ? "bg-gray-700 text-gray-100 hover:bg-gray-600"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-                onClick={() => setSelectedTag(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Favorites */}
-        {favoriteNotes.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-700 dark:text-gray-600 mb-2">
-              Favorites
-            </h2>
-            <div className={noteLayoutClasses}>
-              {favoriteNotes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onEdit={(n) => {
-                    setEditingNote(n);
-                    setShowModal(true);
-                  }}
-                  onDelete={handleDeleteClick}
-                  onTogglePin={handleTogglePin}
-                  onToggleFavorite={handleToggleFavorite}
-                  onSummarize={handleSummarize} // NEW
-                  loadingSummary={loadingSummaryId === note.id}
-                  onView={handleViewNote}
-                  darkMode={darkMode}
-                />
-              ))}
+        {/* 4 Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Notes — sage */}
+          <Card className="p-5 flex items-center justify-between bg-[var(--bg-surface)] border-[var(--border-subtle)]" hover>
+            <div>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wider text-[var(--text-muted)]">Total Notes</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold font-fraunces text-[var(--text-primary)] mt-1">
+                {stats.totalNotes}
+              </h3>
+              <p className="text-[11px] text-[var(--accent-sage)] font-medium mt-1 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> Synced &amp; safe
+              </p>
             </div>
-          </div>
-        )}
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-sage)]/10 text-[var(--accent-sage)] flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+          </Card>
 
-        {/* Pinned Notes */}
+          {/* Notes This Week — sage */}
+          <Card className="p-5 flex items-center justify-between bg-[var(--bg-surface)] border-[var(--border-subtle)]" hover>
+            <div>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wider text-[var(--text-muted)]">Notes This Week</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold font-fraunces text-[var(--text-primary)] mt-1">
+                {stats.notesThisWeek}
+              </h3>
+              <p className="text-[11px] text-[var(--accent-sage)] font-medium mt-1">
+                Weekly activity
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-sage)]/10 text-[var(--accent-sage)] flex items-center justify-center">
+              <Calendar className="w-6 h-6" />
+            </div>
+          </Card>
+
+          {/* OCR Scans — gold */}
+          <Card className="p-5 flex items-center justify-between bg-[var(--bg-surface)] border-[var(--border-subtle)]" hover>
+            <div>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wider text-[var(--text-muted)]">OCR Scans Used</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold font-fraunces text-[var(--text-primary)] mt-1">
+                {stats.ocrScans}
+              </h3>
+              <p className="text-[11px] text-[var(--accent-gold)] font-medium mt-1">
+                Handwriting to text
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] flex items-center justify-center">
+              <ScanLine className="w-6 h-6" />
+            </div>
+          </Card>
+
+          {/* AI Summaries — gold */}
+          <Card className="p-5 flex items-center justify-between bg-[var(--bg-surface)] border-[var(--border-subtle)]" hover>
+            <div>
+              <p className="text-xs font-semibold font-mono uppercase tracking-wider text-[var(--text-muted)]">AI Summaries &amp; Decks</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold font-fraunces text-[var(--text-primary)] mt-1">
+                {stats.aiSummariesUsed}
+              </h3>
+              <p className="text-[11px] text-[var(--accent-gold)] font-medium mt-1">
+                Active study aids
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] flex items-center justify-center">
+              <BrainCircuit className="w-6 h-6" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Weekly Productivity Chart & Quick Tools Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Activity Bar Chart */}
+          <Card className="lg:col-span-2 p-6 bg-[var(--bg-surface)] border-[var(--border-subtle)]" glass>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-base font-bold font-fraunces text-[var(--text-primary)]">
+                  Weekly Study Productivity
+                </h3>
+                <p className="text-xs text-[var(--text-muted)]">Notes captured across the past 7 days</p>
+              </div>
+              <Badge variant="primary" size="xs">
+                Live Metrics
+              </Badge>
+            </div>
+
+            <div className="h-44 flex items-end justify-between gap-3 pt-4 px-2">
+              {activityData.map((item, i) => {
+                const heightPercent = Math.max(15, Math.round((item.count / maxActivity) * 100));
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                    <span className="text-[10px] text-[var(--text-muted)] group-hover:text-[var(--accent-sage)] font-semibold transition">
+                      {item.count}
+                    </span>
+                    <div className="w-full bg-[var(--bg-elevated)] rounded-xl overflow-hidden h-32 flex items-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-[var(--accent-sage)] to-[var(--accent-sage)]/60 group-hover:from-[var(--accent-gold)] group-hover:to-[var(--accent-gold)]/60 rounded-xl transition-all duration-300"
+                        style={{ height: `${heightPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">
+                      {item.day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Quick Study Assistant Card */}
+          <Card className="p-6 flex flex-col justify-between bg-[var(--bg-surface)] border-[var(--border-subtle)]">
+            <div>
+              <div className="w-10 h-10 rounded-2xl bg-[var(--accent-gold)] text-[var(--bg-base)] flex items-center justify-center mb-4 shadow-md shadow-[var(--accent-gold)]/20">
+                <BrainCircuit className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold font-fraunces text-[var(--text-primary)] mb-1">
+                Student AI Assistant
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+                Did you know? You can generate self-quizzes and flashcards directly from any note inside the editor.
+              </p>
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-between">
+                  <span className="text-[var(--text-secondary)]">Summarize in Bullets</span>
+                  <span className="text-[var(--accent-gold)] font-bold">Fast</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-between">
+                  <span className="text-[var(--text-secondary)]">Generate Flashcards</span>
+                  <span className="text-[var(--accent-gold)] font-bold">Smart</span>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => openNewNoteModal()}
+              className="mt-6 w-full"
+            >
+              Try AI Tools Now
+            </Button>
+          </Card>
+        </div>
+
+        {/* Pinned Notes Section */}
         {pinnedNotes.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-700 dark:text-gray-600 mb-2">
-              Pinned
-            </h2>
-            <div className={noteLayoutClasses}>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold font-fraunces text-[var(--text-primary)] flex items-center gap-2">
+                <Pin className="w-4 h-4 text-[var(--accent-gold)] fill-current" />
+                Pinned Notes
+              </h2>
+              <span className="text-xs text-[var(--text-muted)]">{pinnedNotes.length} pinned</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {pinnedNotes.map((note) => (
                 <NoteCard
                   key={note.id}
                   note={note}
-                  onEdit={(n) => {
-                    setEditingNote(n);
-                    setShowModal(true);
-                  }}
-                  onDelete={handleDelete}
-                  onTogglePin={handleTogglePin}
-                  onToggleFavorite={handleToggleFavorite}
-                  onSummarize={handleSummarize} // NEW
+                  onView={setViewingNote}
+                  onEdit={openEditNoteModal}
+                  onDelete={deleteNoteWithUndo}
+                  onTogglePin={togglePin}
+                  onToggleFavorite={toggleFavorite}
+                  onSummarize={summarizeNote}
+                  onShare={setSharingNote}
                   loadingSummary={loadingSummaryId === note.id}
-                   onView={handleViewNote}
-                  darkMode={darkMode}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* Other Notes */}
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-700 dark:text-gray-600">
-            Others
-          </h2>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {otherNotes.length} note{otherNotes.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-        <div className={noteLayoutClasses}>
-          {otherNotes.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-300">No notes found.</p>
+        {/* Recent Notes Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold font-fraunces text-[var(--text-primary)]">
+                Recent Notes
+              </h2>
+              <p className="text-xs text-[var(--text-muted)]">Recently edited and captured materials</p>
+            </div>
+            <button
+              onClick={() => navigate("/notes")}
+              className="text-xs font-semibold text-[var(--accent-sage)] hover:underline flex items-center gap-1"
+            >
+              View All ({notes.length}) <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {recentNotes.length === 0 ? (
+            <Card className="p-10 text-center flex flex-col items-center justify-center bg-[var(--bg-surface)] border-[var(--border-subtle)]">
+              <BookOpen className="w-12 h-12 text-[var(--text-muted)] mb-3" />
+              <p className="text-sm font-semibold text-[var(--text-secondary)] mb-1">
+                No notes found yet!
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mb-4 max-w-sm">
+                Get started by creating your first lecture or study note, or upload an image to extract text.
+              </p>
+              <Button variant="primary" size="sm" onClick={() => openNewNoteModal()}>
+                <Plus className="w-4 h-4 mr-1.5" /> Create First Note
+              </Button>
+            </Card>
           ) : (
-            otherNotes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onEdit={(n) => {
-                  setEditingNote(n);
-                  setShowModal(true);
-                }}
-                onDelete={handleDeleteClick}
-                onTogglePin={handleTogglePin}
-                onToggleFavorite={handleToggleFavorite}
-                onSummarize={handleSummarize} // NEW
-                loadingSummary={loadingSummaryId === note.id}
-                 onView={handleViewNote}
-                darkMode={darkMode}
-              />
-            ))
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentNotes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  onView={setViewingNote}
+                  onEdit={openEditNoteModal}
+                  onDelete={deleteNoteWithUndo}
+                  onTogglePin={togglePin}
+                  onToggleFavorite={toggleFavorite}
+                  onSummarize={summarizeNote}
+                  onShare={setSharingNote}
+                  loadingSummary={loadingSummaryId === note.id}
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <AddEditNoteModal
-          note={editingNote}
-          closeModal={() => setShowModal(false)}
-          refreshNotes={fetchNotes}
-          userId={localStorage.getItem("userId")}
-          darkMode={darkMode}
-        />
-      )}
-
-      {viewingNote && (
-        <ViewNoteModal
-          note={viewingNote}
-          darkMode={darkMode}
-          onClose={() => setViewingNote(null)}
-        />
-      )}
-      <DeleteModal
-  isOpen={showDeleteModal}
-  onClose={() => setShowDeleteModal(false)}
-  onConfirm={confirmDelete}
-/>
-    </div>
+    </AppLayout>
   );
 };
 

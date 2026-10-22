@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Pin, Star, Sparkles, Eye } from "lucide-react";
+import { Pin, Star, Sparkles, Eye, Pencil, Trash2, CloudOff } from "lucide-react";
 
 const NoteCard = ({
   note,
@@ -15,181 +16,209 @@ const NoteCard = ({
 
   const safeHTML = note?.content || "";
 
+  const theme = darkMode
+    ? {
+        card: "bg-[#292720] border-[#5C6E4E] text-[#F6F2E9]",
+        title: "text-[#D5DFC9]",
+        content: "text-[#D6D0C4]",
+        footer: "border-[#49463D]",
+        tag: "bg-[#41483A] text-[#D5DFC9]",
+        summary: "border-[#5C6E4E] bg-[#353C30] text-[#F6F2E9]",
+        muted: "text-[#B5AE9F]",
+        hover: "hover:bg-[#3A382F]",
+      }
+    : {
+        card: "bg-[#FDFBF6] border-[#5C6E4E] text-[#292720]",
+        title: "text-[#4B5C3F]",
+        content: "text-[#5F5A50]",
+        footer: "border-[#E7E0D4]",
+        tag: "bg-[#E5E9DE] text-[#4B5C3F]",
+        summary: "border-[#D7DFCE] bg-[#EEF0E8] text-[#292720]",
+        muted: "text-[#817C70]",
+        hover: "hover:bg-[#F1EDE3]",
+      };
+
   const handleSummarizeClick = () => {
     if (!navigator.onLine) {
       alert("You're offline. Summarization needs an internet connection.");
       return;
     }
+
     onSummarize?.(note);
   };
 
-  const toggleSummaryView = () => setShowSummary((s) => !s);
-
   return (
-    <div
-      className={`rounded-lg shadow-md transition transform hover:scale-[1.02] hover:shadow-lg border-l-4 ${
-        darkMode
-          ? "bg-gray-900 border-blue-400 text-gray-100"
-          : "bg-white border-blue-500 text-gray-900"
-      }`}
+    <article
+      className={`group overflow-hidden rounded-2xl border border-l-[4px] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${theme.card} hover:border-l-[#B65F43]`}
     >
-    
+      {/* Note content */}
       <div className="p-5">
-        <div className="flex items-start justify-between mb-2 gap-2">
-          <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-            {note.title}
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <h2
+            className={`min-w-0 break-words font-display text-lg font-semibold leading-snug tracking-tight ${theme.title}`}
+          >
+            {note.title || "Untitled note"}
+
             {note.pinned && (
-              <span title="Pinned" aria-label="Pinned" className="text-blue-400 text-sm leading-none">
-                📌
-              </span>
+              <Pin
+                size={14}
+                aria-label="Pinned"
+                className="ml-2 inline-block -rotate-45 text-[#B8842A]"
+                fill="currentColor"
+              />
             )}
+
             {note.favorite && (
-              <span title="Favorite" aria-label="Favorite" className="text-yellow-400 text-sm leading-none">
-                ★
-              </span>
+              <Star
+                size={14}
+                aria-label="Favorite"
+                className="ml-1 inline-block text-[#B8842A]"
+                fill="currentColor"
+              />
             )}
           </h2>
 
           {note._offline && (
             <span
-              className="text-xs bg-yellow-400 text-white px-2 py-0.5 rounded"
               title="This note is saved offline and will sync when you're online."
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#F4EBDD] px-2.5 py-1 text-[10px] font-semibold text-[#91651F]"
             >
+              <CloudOff size={11} />
               Offline
             </span>
           )}
         </div>
 
-    
         <div
-          className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 line-clamp-4 text-sm leading-relaxed"
+          className={`prose prose-sm max-w-none line-clamp-4 break-words leading-relaxed ${darkMode ? "prose-invert" : ""} ${theme.content}`}
           dangerouslySetInnerHTML={{ __html: safeHTML }}
         />
       </div>
 
-    
+      {/* Summary */}
       {note.summary && showSummary && (
         <div
-          className={`mx-5 mb-3 p-3 rounded border text-sm leading-relaxed ${
-            darkMode
-              ? "border-blue-500/40 bg-blue-500/10 text-gray-100"
-              : "border-blue-200 bg-blue-50 text-gray-800"
-          }`}
+          className={`mx-5 mb-4 rounded-xl border p-4 text-sm leading-relaxed ${theme.summary}`}
         >
-          <strong className="block mb-1 text-xs uppercase tracking-wide opacity-80">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#5C6E4E]">
+            <Sparkles size={14} />
             Summary
-          </strong>
-          <div className="whitespace-pre-line break-words">{note.summary}</div>
+          </div>
+
+          <div className="whitespace-pre-line break-words">
+            {note.summary}
+          </div>
         </div>
       )}
 
-     
-      <div
-        className={`p-4 border-t flex flex-wrap justify-between items-center gap-3 text-xs ${
-          darkMode ? "border-gray-700" : "border-gray-200"
-        }`}
-      >
-      
-        <div className="flex flex-wrap gap-2">
-          {note.tags?.map((tag, i) => (
-            <span
-              key={i}
-              className={`px-2 py-1 rounded-full font-medium ${
-                darkMode
-                  ? "bg-gray-800 text-gray-300"
-                  : "bg-blue-100 text-blue-700"
-              }`}
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
+      {/* Tags and actions */}
+      <div className={`border-t px-5 py-4 ${theme.footer}`}>
+        {note.tags?.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {note.tags.map((tag, index) => (
+              <span
+                key={`${tag}-${index}`}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${theme.tag}`}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
-      
-        <div className="w-full flex-nowrap flex items-center justify-end gap-2 text-[11px] sm:text-xs">
-          
-          <button
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-xs">
+          <ActionButton
+            icon={<Eye size={14} />}
+            label="View"
             onClick={() => onView?.(note)}
-            className="inline-flex items-center gap-1 text-purple-500 hover:text-purple-600"
-          >
-            <Eye size={12} />
-            View
-          </button>
+            className="text-[#5C6E4E] hover:text-[#4B5C3F]"
+          />
 
-          
-          <button
+          <ActionButton
+            icon={
+              <Pin
+                size={14}
+                className={note.pinned ? "-rotate-45" : ""}
+                fill={note.pinned ? "currentColor" : "none"}
+              />
+            }
+            label={note.pinned ? "Unpin" : "Pin"}
             onClick={() => onTogglePin?.(note)}
-            className={`inline-flex items-center gap-1 ${
+            className={
               note.pinned
-                ? "text-blue-600 hover:text-blue-800"
-                : "text-gray-700 hover:text-blue-500 dark:text-gray-700"
-            }`}
-          >
-            <Pin size={12} />
-            {note.pinned ? "Unpin" : "Pin"}
-          </button>
+                ? "text-[#B8842A]"
+                : `${theme.muted} hover:text-[#B8842A]`
+            }
+          />
 
-          
-          <button
+          <ActionButton
+            icon={
+              <Star
+                size={14}
+                fill={note.favorite ? "currentColor" : "none"}
+              />
+            }
+            label={note.favorite ? "Unfavorite" : "Favorite"}
             onClick={() => onToggleFavorite?.(note)}
-            className={`inline-flex items-center gap-1 ${
+            className={
               note.favorite
-                ? "text-yellow-500 hover:text-yellow-600"
-                : "text-gray-700 hover:text-yellow-500 dark:text-gray-700"
-            }`}
-          >
-            <StarIcon active={note.favorite} />
-            {note.favorite ? "Unfavorite" : "Favorite"}
-          </button>
+                ? "text-[#B8842A]"
+                : `${theme.muted} hover:text-[#B8842A]`
+            }
+          />
 
-       
           {note.summary ? (
-            <button
-              onClick={toggleSummaryView}
-              className="inline-flex items-center gap-1 text-green-500 hover:text-green-600"
-            >
-              <Sparkles size={12} />
-              {showSummary ? "Hide" : "Summary"}
-            </button>
+            <ActionButton
+              icon={<Sparkles size={14} />}
+              label={showSummary ? "Hide summary" : "Summary"}
+              onClick={() => setShowSummary((value) => !value)}
+              className="text-[#5C6E4E] hover:text-[#4B5C3F]"
+            />
           ) : (
-            <button
+            <ActionButton
+              icon={<Sparkles size={14} />}
+              label="Summarize"
               onClick={handleSummarizeClick}
-              className="inline-flex items-center gap-1 text-green-500 hover:text-green-600"
-            >
-              <Sparkles size={12} />
-              Summarize
-            </button>
+              className="text-[#5C6E4E] hover:text-[#4B5C3F]"
+            />
           )}
 
-          {/* Edit */}
-          <button
-            onClick={() => onEdit(note)}
-            className="text-blue-500 hover:underline font-medium"
-          >
-            Edit
-          </button>
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onEdit?.(note)}
+              aria-label={`Edit ${note.title || "note"}`}
+              className="inline-flex items-center gap-1.5 font-medium text-[#5C6E4E] transition-colors hover:text-[#4B5C3F]"
+            >
+              <Pencil size={13} />
+              Edit
+            </button>
 
-          {/* Delete */}
-          <button
-            // onClick={() => onDelete(note.id)}
-             onClick={() => onDelete(note.id)}
-            className="text-red-500 hover:underline font-medium"
-          >
-            Delete
-          </button>
+            <button
+              type="button"
+              onClick={() => onDelete?.(note.id)}
+              aria-label={`Delete ${note.title || "note"}`}
+              className="inline-flex items-center gap-1.5 font-medium text-[#B65F43] transition-colors hover:text-[#9E4F37]"
+            >
+              <Trash2 size={13} />
+              Delete
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
-
-const StarIcon = ({ active }) => (
-  <Star
-    size={12}
-    className={active ? "text-yellow-500" : ""}
-    fill={active ? "currentColor" : "none"}
-  />
+const ActionButton = ({ icon, label, onClick, className = "" }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex items-center gap-1.5 whitespace-nowrap font-medium transition-colors ${className}`}
+  >
+    {icon}
+    {label}
+  </button>
 );
 
 export default NoteCard;
