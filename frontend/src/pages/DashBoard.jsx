@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useNotes } from "../context/NotesContext";
 import { useAuth } from "../context/AuthContext";
-import AppLayout from "../components/layout/AppLayout";
+import AppLayout from "../Components/layout/AppLayout";
 import NoteCard from "../Components/NoteCard";
 import { Card, Button ,Badge } from "../Components/common/Badge";
 import { useNavigate } from "react-router-dom";
