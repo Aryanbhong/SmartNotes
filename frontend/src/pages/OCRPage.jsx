@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import Tesseract from "tesseract.js";
 import { useNotes } from "../context/NotesContext";
-import { AppLayout } from "../components/layout/AppLayout";
-import { Button, Card } from "../components/common/Badge";
+import AppLayout from "../components/layout/AppLayout";
+import { Button, Card } from "../Components/common/Badge";
 import toast from "react-hot-toast";
 
 export const OCRPage = () => {

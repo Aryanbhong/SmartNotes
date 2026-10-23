@@ -14,7 +14,7 @@ import {
 import { formatRelativeTime } from "../../utils/formatters";
 import { Badge } from "../common/Badge";
 
-export const NoteCard = ({
+const NoteCard = ({
   note,
   onView,
   onEdit,
@@ -260,3 +260,6 @@ export const NoteCard = ({
     </article>
   );
 };
+
+
+export default NoteCard;

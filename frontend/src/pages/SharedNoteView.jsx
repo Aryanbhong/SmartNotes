@@ -12,7 +12,7 @@ import {
   Leaf,
 } from "lucide-react";
 import { formatNoteDate, getReadingStats } from "../utils/formatters";
-import { Button } from "../components/common/Badge";
+import { Button } from "../Components/common/Badge";
 
 export const SharedNoteView = () => {
   const { shareId } = useParams();

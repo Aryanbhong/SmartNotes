@@ -14,7 +14,7 @@ import {
   Leaf,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { Button } from "../components/common/Badge";
+import { Button } from "../Components/common/Badge";
 import toast from "react-hot-toast";
 
 export const Signup = () => {

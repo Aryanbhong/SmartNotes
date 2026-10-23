@@ -12,7 +12,7 @@ import { OCRScannerModal } from "../ocr/OCRScannerModal";
 import { useKeyboardShortcut } from "../../hooks/useKeyboardShortcut";
 import { useNotes } from "../../context/NotesContext";
 
-export const AppLayout = ({ children }) => {
+const AppLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -123,3 +123,6 @@ export const AppLayout = ({ children }) => {
     </div>
   );
 };
+
+
+export default AppLayout;

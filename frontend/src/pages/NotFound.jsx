@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Home, ArrowLeft, BookOpen } from "lucide-react";
-import { Button } from "../components/common/Badge";
+import { Button } from "../Components/common/Badge";
 
 export const NotFound = () => {
   const navigate = useNavigate();

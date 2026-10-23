@@ -16,7 +16,7 @@ import {
   Layers,
   GraduationCap,
 } from "lucide-react";
-import { Button } from "../components/common/Badge";
+import { Button } from "../Components/common/Badge";
 import { useAuth } from "../context/AuthContext";
 
 export const Home = () => {

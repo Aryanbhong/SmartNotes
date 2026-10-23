@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNotes } from "../context/NotesContext";
-import { AppLayout } from "../components/layout/AppLayout";
+import AppLayout from "../components/layout/AppLayout";
 import { NoteGrid } from "../Components/notes/NoteGrid";
-import { Button } from "../components/common/Badge";
+import { Button } from "../Components/common/Badge";
 import {
   BookOpen,
   Star,
