@@ -1,13 +1,36 @@
+// import axios from "axios";
+
+// const API = axios.create({
+//   baseURL: "http://localhost:5000/api", // backend base URL
+// });
+
+// // For attaching token to requests
+// API.interceptors.request.use((req) => {
+//   const token = localStorage.getItem("token");
+//   if (token) req.headers.Authorization = `Bearer ${token}`;
+//   return req;
+// });
+
+// export default API;
+
+
+
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // backend base URL
+  // Local development uses Vite's proxy; production uses the same Render domain.
+  baseURL: "/api",
+  withCredentials: true,
 });
 
-// For attaching token to requests
+// Attach token to requests
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
-  if (token) req.headers.Authorization = `Bearer ${token}`;
+
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
+
   return req;
 });
 
