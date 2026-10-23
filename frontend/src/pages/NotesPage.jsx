@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNotes } from "../context/NotesContext";
-import AppLayout from "../components/layout/AppLayout";
+import AppLayout from "../Components/layout/AppLayout";
 import { NoteGrid } from "../Components/notes/NoteGrid";
 import { Button } from "../Components/common/Badge";
 import {
