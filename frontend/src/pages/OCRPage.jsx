@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Tesseract from "tesseract.js";
 import { useNotes } from "../context/NotesContext";
-import AppLayout from "../components/layout/AppLayout";
+import AppLayout from "../Components/layout/AppLayout";
 import { Button, Card } from "../Components/common/Badge";
 import toast from "react-hot-toast";
 
